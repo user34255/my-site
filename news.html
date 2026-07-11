@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Последние истории</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        @font-face {
+            font-family: 'basis33';
+            src: url('basis33.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* ── Плавный вход / выход страницы ─────────────────── */
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'basis33', sans-serif;
+            overflow: hidden;
+            background-color: #0f141c;
+            position: relative;
+
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        body.loaded { opacity: 1; }
+
+        /* ── Задний фон ────────────────────────────────────── */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('f.png') no-repeat center center fixed;
+            background-size: cover;
+            filter: blur(10px);
+            transform: scale(1.05);
+            z-index: -1;
+        }
+
+        /* ── Зона триггера для панели ──────────────────────── */
+        .top-nav-zone {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 50px;
+            z-index: 9999;
+        }
+
+        /* ── Стеклянная подложка панели ───────────────────── */
+        .navbar-container {
+            position: fixed;
+            top: -160px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 940px;
+            padding: 20px 35px;
+            border-radius: 0 0 60px 60px;
+
+            background: linear-gradient(
+                160deg,
+                rgba(255, 255, 255, 0.14) 0%,
+                rgba(255, 255, 255, 0.05) 45%,
+                rgba(255, 255, 255, 0.01) 100%
+            );
+            backdrop-filter: blur(14px) saturate(1.5);
+            -webkit-backdrop-filter: blur(14px) saturate(1.5);
+
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-top: none;
+            box-shadow:
+                0 24px 50px rgba(0, 0, 0, 0.38),
+                inset 0  1px 0 rgba(255, 255, 255, 0.22),
+                inset 1px 0 0 rgba(255, 255, 255, 0.07),
+                inset -1px 0 0 rgba(255, 255, 255, 0.07);
+
+            transition: top 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.12);
+            z-index: 10000;
+        }
+
+        .top-nav-zone:hover + .navbar-container,
+        .navbar-container:hover {
+            top: 0;
+        }
+
+        /* ── Внутреннее бирюзовое основание ───────────────── */
+        .navbar-inner {
+            background: #00969d;
+            border-radius: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 25px;
+            width: 100%;
+            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ── Кнопки меню ──────────────────────────────────── */
+        .nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 62px; height: 62px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.75);
+            transition:
+                background   0.28s ease,
+                border-color 0.28s ease,
+                box-shadow   0.28s ease,
+                transform    0.3s  cubic-bezier(0.34, 1.5, 0.64, 1);
+            border: 1px solid transparent;
+            background: transparent;
+            text-decoration: none;
+        }
+
+        .nav-item svg {
+            width: 28px; height: 28px;
+            display: block;
+            transition: filter 0.28s ease, color 0.28s ease;
+        }
+
+        /* ── Центральная плашка ───────────────────────────── */
+        .nav-spacer {
+            flex-shrink: 0;
+            width: 320px;
+            height: 62px;
+            background: #007c85;
+            border-radius: 35px;
+            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.25);
+        }
+
+        /* ── Стеклянный эффект кнопок (hover + active) ────── */
+        .nav-item:hover,
+        .nav-item.active {
+            background: linear-gradient(
+                145deg,
+                rgba(255, 255, 255, 0.30) 0%,
+                rgba(255, 255, 255, 0.08) 100%
+            );
+            backdrop-filter: blur(10px) saturate(1.6);
+            -webkit-backdrop-filter: blur(10px) saturate(1.6);
+            border: 1px solid rgba(255, 255, 255, 0.38);
+            box-shadow:
+                inset 0  1px 0 rgba(255, 255, 255, 0.40),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.10),
+                0 6px 16px rgba(0, 0, 0, 0.20);
+            transform: scale(1.06);
+            color: #ffffff;
+        }
+
+        .nav-item:hover svg,
+        .nav-item.active svg {
+            color: #ffffff;
+            filter: drop-shadow(0 0 5px #ffffff) drop-shadow(0 0 12px rgba(255, 255, 255, 0.9));
+        }
+
+        /* ── Карточка ленты (увеличена по высоте) ─────────── */
+        .feed-card {
+            position: relative;
+            z-index: 10;
+
+            background: linear-gradient(
+                145deg,
+                rgba(255, 255, 255, 0.10) 0%,
+                rgba(255, 255, 255, 0.04) 50%,
+                rgba(255, 255, 255, 0.01) 100%
+            );
+            backdrop-filter: blur(14px) saturate(1.5);
+            -webkit-backdrop-filter: blur(14px) saturate(1.5);
+
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 80px;
+            padding: 45px 70px;
+            box-shadow:
+                0 32px 70px rgba(0, 0, 0, 0.38),
+                0 0 0 1px rgba(255, 255, 255, 0.06),
+                inset 0  1px 0 rgba(255, 255, 255, 0.24),
+                inset 0 -2px 0 rgba(0, 0, 0, 0.14);
+
+            display: flex;
+            flex-direction: column;
+            width: 1180px;
+            max-width: 95%;
+
+            /* Высота увеличена, чтобы видеть больше постов сразу */
+            height: 93vh;
+            max-height: 940px;
+
+            /* Лёгкое появление карточки */
+            animation: cardIn 0.5s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+            animation-delay: 0.15s;
+        }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(18px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0)    scale(1);    }
+        }
+
+        /* ── Заголовок ─────────────────────────────────────── */
+        .feed-title {
+            font-family: 'basis33', sans-serif;
+            font-size: 32px;
+            color: #ffffff;
+            letter-spacing: 1px;
+            font-weight: normal;
+            text-transform: uppercase;
+            margin-bottom: 25px;
+        }
+
+        /* ── Скролл-контейнер ─────────────────────────────── */
+        .feed-container {
+            display: flex;
+            flex-direction: column;
+            gap: 35px;
+            overflow-y: auto;
+            width: 100%;
+            height: 100%;
+            padding-right: 15px;
+            scroll-behavior: smooth;
+        }
+
+        .feed-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .feed-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+        }
+        .feed-container::-webkit-scrollbar-thumb {
+            background: rgba(0, 150, 157, 0.4);
+            border-radius: 10px;
+            transition: background 0.25s ease;
+        }
+        .feed-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 150, 157, 0.65);
+        }
+
+        /* ── Пост ─────────────────────────────────────────── */
+        .post-item {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .post-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .post-avatar {
+            width: 28px; height: 28px;
+            background: #00969d;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+        }
+
+        .post-avatar svg {
+            width: 16px; height: 16px;
+        }
+
+        .post-username {
+            font-family: 'basis33', sans-serif;
+            font-size: 32px;
+            font-weight: normal;
+            color: #00a4ad;
+        }
+
+        /* ── Текст поста ──────────────────────────────────── */
+        .post-text-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-family: 'basis33', sans-serif;
+            font-size: 24px;
+            color: #ffffff;
+            line-height: 1.3;
+            margin-bottom: 20px;
+        }
+
+        .post-date-prefix {
+            white-space: nowrap;
+            color: #ffffff;
+            user-select: none;
+        }
+
+        .post-actual-text {
+            flex: 1;
+            word-wrap: break-word;
+        }
+
+        /* ── Медиа-группа ─────────────────────────────────── */
+        .post-media-group {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .media-box {
+            background: #ffffff;
+            color: #000000;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 52px;
+            font-weight: bold;
+
+            width: 340px;
+            height: 190px;
+            border-radius: 36px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            user-select: none;
+            cursor: pointer;
+
+            transition:
+                transform  0.25s cubic-bezier(0.34, 1.5, 0.64, 1),
+                box-shadow 0.25s ease;
+        }
+
+        .media-box:hover {
+            transform: scale(1.04) translateY(-2px);
+            box-shadow:
+                0 10px 22px rgba(0, 0, 0, 0.22),
+                0 0 18px rgba(0, 150, 157, 0.35);
+        }
+
+        /* ── Попап «нужен ключ» ────────────────────────────── */
+        .key-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.85);
+            z-index: 99999;
+            background: linear-gradient(145deg, rgba(255,255,255,0.13), rgba(255,255,255,0.05));
+            backdrop-filter: blur(20px) saturate(1.6);
+            -webkit-backdrop-filter: blur(20px) saturate(1.6);
+            border: 1px solid rgba(255,255,255,0.22);
+            border-radius: 48px;
+            padding: 42px 60px;
+            text-align: center;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.45),
+                        inset 0 1px 0 rgba(255,255,255,0.28);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.34,1.3,0.64,1);
+        }
+        .key-popup.show {
+            opacity: 1;
+            pointer-events: all;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .key-popup-icon {
+            font-size: 48px;
+            margin-bottom: 18px;
+            display: block;
+            filter: drop-shadow(0 0 12px rgba(0,188,212,0.6));
+        }
+        .key-popup-title {
+            font-family: 'basis33', monospace;
+            font-size: 28px;
+            color: #ffffff;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .key-popup-text {
+            font-family: 'basis33', monospace;
+            font-size: 20px;
+            color: rgba(255,255,255,0.7);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+        .key-popup-close {
+            background: #00969d;
+            border: none;
+            border-radius: 50px;
+            padding: 12px 44px;
+            font-family: 'basis33', monospace;
+            font-size: 20px;
+            letter-spacing: 2px;
+            color: #ffffff;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0,150,157,0.45);
+            transition: background 0.25s ease, transform 0.25s cubic-bezier(0.34,1.5,0.64,1);
+        }
+        .key-popup-close:hover {
+            background: #00b0b8;
+            transform: translateY(-2px);
+        }
+        .key-popup-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99998;
+            display: none;
+        }
+        .key-popup-overlay.show { display: block; }
+    </style>
+    <script>
+        (function(){
+            var r = localStorage.getItem('role');
+            if (!r) { window.location.replace('index.html'); return; }
+        })();
+    </script>
+</head>
+<body>
+
+    
+    <!-- Попап: нужен ключ -->
+    <div class="key-popup-overlay" id="keyOverlay" onclick="closeKeyPopup()"></div>
+    <div class="key-popup" id="keyPopup">
+        <span class="key-popup-icon">🔑</span>
+        <div class="key-popup-title">Доступ закрыт</div>
+        <div class="key-popup-text">Для публикации историй<br>нужен ключ доступа</div>
+        <button class="key-popup-close" onclick="closeKeyPopup()">Понятно</button>
+    </div>
+
+    <div class="top-nav-zone"></div>
+
+    <!-- НАВИГАЦИОННАЯ ПАНЕЛЬ -->
+    <div class="navbar-container">
+        <div class="navbar-inner">
+            <a href="search.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></a>
+            <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></svg></div>
+            <div class="nav-spacer"></div>
+            <a href="create.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg></a>
+            <a href="profile.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></a>
+        </div>
+    </div>
+
+    <!-- ОСНОВНАЯ КАРТОЧКА ЛЕНТЫ -->
+    <div class="feed-card">
+        <h2 class="feed-title">ПОСЛЕДНИЕ ИСТОРИИ</h2>
+
+        <div class="feed-container">
+
+            <!-- ПОСТ 1 -->
+            <div class="post-item">
+                <div class="post-user">
+                    <div class="post-avatar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    </div>
+                    <div class="post-username">Ник</div>
+                </div>
+
+                <div class="post-text-row">
+                    <span class="post-date-prefix">25.09.26 |</span>
+                    <span class="post-actual-text">Текст Текст Текст Текст Текст Текст Текст Текст Текст Текст Текст Текст.</span>
+                </div>
+
+                <div class="post-media-group">
+                    <div class="media-box">ФОТО</div>
+                    <div class="media-box">ВИДЕО</div>
+                </div>
+            </div>
+
+            <!-- ПОСТ 2 -->
+            <div class="post-item" style="margin-top: 20px;">
+                <div class="post-user">
+                    <div class="post-avatar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    </div>
+                    <div class="post-username">Ник</div>
+                </div>
+
+                <div class="post-text-row">
+                    <span class="post-date-prefix">26.09.26 |</span>
+                    <span class="post-actual-text">Текст Текст Текст Текст Текст Текст Текст Текст Текст Текст Текст Текст.</span>
+                </div>
+
+                <div class="post-media-group">
+                    <div class="media-box">ФОТО</div>
+                    <div class="media-box">ВИДЕО</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ── Плавное появление страницы ─────────────────────
+        window.addEventListener('load', () => {
+            requestAnimationFrame(() => document.body.classList.add('loaded'));
+        });
+
+        // ── Плавный уход со страницы при переходе ─────────
+        document.querySelectorAll('a[href]').forEach(link => {
+            link.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+
+                if (href && !href.startsWith('#') && !href.startsWith('http') && !href.startsWith('mailto')) {
+                    e.preventDefault();
+                    document.body.style.transition = 'opacity 0.3s ease';
+                    document.body.style.opacity = '0';
+                    setTimeout(() => { window.location.href = href; }, 310);
+                }
+            });
+        });
+
+        // ── Переключение активной кнопки ──────────────────
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                if (item.tagName === 'A' && item.getAttribute('href') !== '#') return;
+                navItems.forEach(el => el.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+
+        // ── Попап для зрителей при клике на кнопку создания ─
+        function openKeyPopup() {
+            document.getElementById('keyPopup').classList.add('show');
+            document.getElementById('keyOverlay').classList.add('show');
+        }
+        function closeKeyPopup() {
+            document.getElementById('keyPopup').classList.remove('show');
+            document.getElementById('keyOverlay').classList.remove('show');
+        }
+        // Перехватить клик на create.html если зритель
+        document.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem('role') === 'viewer') {
+                document.querySelectorAll('a.nav-item[href="create.html"]').forEach(function(btn) {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        openKeyPopup();
+                    });
+                });
+            }
+        });
+
+        // Зрителю убираем href у кнопки создания — браузер не сможет перейти
+        (function() {
+            if (localStorage.getItem('role') !== 'viewer') return;
+            var btn = document.querySelector('a.nav-item[href="create.html"]');
+            if (!btn) return;
+            btn.removeAttribute('href');
+            btn.style.cursor = 'pointer';
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openKeyPopup();
+            }, true); // true = capture phase, срабатывает первым
+        })();
+    </script>
+</body>
+</html>

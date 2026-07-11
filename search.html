@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поиск</title>
+    <script>
+        (function(){
+            var r = localStorage.getItem('role');
+            if (!r) { window.location.replace('index.html'); return; }
+        })();
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @font-face { font-family: 'basis33'; src: url('basis33.ttf') format('truetype'); }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            font-family: 'basis33', 'Press Start 2P', monospace;
+            overflow: hidden;
+            background-color: #0f141c;
+            position: relative;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        body.loaded { opacity: 1; }
+
+        body::before {
+            content: "";
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('f.png') no-repeat center center fixed;
+            background-size: cover;
+            filter: blur(10px); transform: scale(1.05); z-index: -1;
+        }
+
+        /* ── Навигация ─────────────────────────────────────── */
+        .top-nav-zone { position: fixed; top: 0; left: 0; width: 100%; height: 50px; z-index: 9999; }
+
+        .navbar-container {
+            position: fixed; top: -160px; left: 50%; transform: translateX(-50%);
+            width: 940px; padding: 20px 35px; border-radius: 0 0 60px 60px;
+            background: linear-gradient(160deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.05) 45%, rgba(255,255,255,0.01) 100%);
+            backdrop-filter: blur(14px) saturate(1.5); -webkit-backdrop-filter: blur(14px) saturate(1.5);
+            border: 1px solid rgba(255,255,255,0.18); border-top: none;
+            box-shadow: 0 24px 50px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.22);
+            transition: top 0.45s cubic-bezier(0.175,0.885,0.32,1.12); z-index: 10000;
+        }
+        .top-nav-zone:hover + .navbar-container, .navbar-container:hover { top: 0; }
+
+        .navbar-inner {
+            background: #00969d; border-radius: 48px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 25px; width: 100%; box-shadow: inset 0 3px 6px rgba(0,0,0,0.3);
+        }
+
+        .nav-item {
+            display: flex; align-items: center; justify-content: center;
+            width: 62px; height: 62px; border-radius: 50%;
+            cursor: pointer; color: rgba(255,255,255,0.75);
+            transition: background 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease, transform 0.3s cubic-bezier(0.34,1.5,0.64,1);
+            border: 1px solid transparent; background: transparent; text-decoration: none;
+        }
+        .nav-item svg { width: 28px; height: 28px; display: block; transition: filter 0.28s ease, color 0.28s ease; }
+        .nav-spacer { flex-shrink: 0; width: 320px; height: 62px; background: #007c85; border-radius: 35px; box-shadow: inset 0 3px 6px rgba(0,0,0,0.25); }
+
+        .nav-item:hover, .nav-item.active {
+            background: linear-gradient(145deg, rgba(255,255,255,0.30), rgba(255,255,255,0.08));
+            backdrop-filter: blur(10px) saturate(1.6); -webkit-backdrop-filter: blur(10px) saturate(1.6);
+            border: 1px solid rgba(255,255,255,0.38);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.40), inset 0 -1px 0 rgba(0,0,0,0.10), 0 6px 16px rgba(0,0,0,0.20);
+            transform: scale(1.06); color: #ffffff;
+        }
+        .nav-item:hover svg, .nav-item.active svg {
+            color: #ffffff; filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 12px rgba(255,255,255,0.9));
+        }
+
+        /* ── Карточка поиска ───────────────────────────────── */
+        .search-card {
+            position: relative; z-index: 10;
+            background: linear-gradient(145deg, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.01) 100%);
+            backdrop-filter: blur(14px) saturate(1.5); -webkit-backdrop-filter: blur(14px) saturate(1.5);
+            border: 1px solid rgba(255,255,255,0.18); border-radius: 120px; padding: 55px 85px;
+            box-shadow: 0 32px 70px rgba(0,0,0,0.38), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.24), inset 0 -2px 0 rgba(0,0,0,0.14);
+            display: flex; align-items: center; width: 740px; max-width: 95%;
+            animation: cardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) both; animation-delay: 0.15s;
+        }
+        @keyframes cardIn { from { opacity:0; transform:translateY(18px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+
+        .search-wrapper { position: relative; width: 100%; display: flex; align-items: center; }
+
+        .search-input {
+            width: 100%; padding: 22px 70px 22px 30px; border: none; border-radius: 50px;
+            font-family: 'basis33', 'Press Start 2P', monospace; font-size: 16px; font-weight: 700;
+            letter-spacing: 1px; color: #00878f; background: #ffffff; outline: none;
+            text-transform: uppercase; caret-color: #00878f;
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.2); transition: box-shadow 0.35s ease;
+        }
+        .search-input:focus { box-shadow: inset 0 4px 8px rgba(0,0,0,0.20), 0 0 0 3px rgba(0,150,157,0.28), 0 0 22px rgba(0,150,157,0.14); }
+        .search-input::placeholder { color: #00878f; opacity: 0.8; font-size: 16px; transition: opacity 0.3s ease; }
+        .search-input:focus::placeholder { opacity: 0.30; }
+
+        .search-btn {
+            position: absolute; right: 10px; background: transparent; border: none;
+            border-radius: 50%; cursor: pointer; width: 52px; height: 52px;
+            display: flex; align-items: center; justify-content: center; color: #00878f;
+            transition: all 0.28s cubic-bezier(0.34,1.5,0.64,1);
+        }
+        .search-btn svg { width: 30px; height: 30px; transition: filter 0.28s ease; }
+        .search-btn:hover { transform: scale(1.12); }
+        .search-btn:hover svg { filter: drop-shadow(0 0 6px rgba(0,135,143,0.6)); }
+
+        /* ── Попап «нужен ключ» ────────────────────────────── */
+        .key-popup {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.85);
+            z-index: 99999;
+            background: linear-gradient(145deg, rgba(255,255,255,0.13), rgba(255,255,255,0.05));
+            backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6);
+            border: 1px solid rgba(255,255,255,0.22); border-radius: 48px; padding: 42px 60px;
+            text-align: center;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.28);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.34,1.3,0.64,1);
+        }
+        .key-popup.show { opacity: 1; pointer-events: all; transform: translate(-50%, -50%) scale(1); }
+        .key-popup-icon { font-size: 48px; margin-bottom: 18px; display: block; }
+        .key-popup-title { font-family: 'basis33', monospace; font-size: 28px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+        .key-popup-text { font-family: 'basis33', monospace; font-size: 20px; color: rgba(255,255,255,0.7); letter-spacing: 1px; text-transform: uppercase; line-height: 1.5; margin-bottom: 30px; }
+        .key-popup-close {
+            background: #00969d; border: none; border-radius: 50px; padding: 12px 44px;
+            font-family: 'basis33', monospace; font-size: 20px; letter-spacing: 2px;
+            color: #ffffff; text-transform: uppercase; cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0,150,157,0.45);
+            transition: background 0.25s ease, transform 0.25s cubic-bezier(0.34,1.5,0.64,1);
+        }
+        .key-popup-close:hover { background: #00b0b8; transform: translateY(-2px); }
+        .key-popup-overlay { position: fixed; inset: 0; z-index: 99998; display: none; }
+        .key-popup-overlay.show { display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="key-popup-overlay" id="keyOverlay" onclick="closeKeyPopup()"></div>
+    <div class="key-popup" id="keyPopup">
+        <span class="key-popup-icon">🔑</span>
+        <div class="key-popup-title">Доступ закрыт</div>
+        <div class="key-popup-text">Для публикации историй<br>нужен ключ доступа</div>
+        <button class="key-popup-close" onclick="closeKeyPopup()">Понятно</button>
+    </div>
+
+    <div class="top-nav-zone"></div>
+
+    <div class="navbar-container">
+        <div class="navbar-inner">
+            <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
+            <a href="news.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></svg></a>
+            <div class="nav-spacer"></div>
+            <a href="create.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg></a>
+            <a href="profile.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></a>
+        </div>
+    </div>
+
+    <div class="search-card">
+        <div class="search-wrapper">
+            <input type="text" class="search-input" placeholder="ПОИСК ПО ДАТЕ/НИКУ/ТЭГУ" spellcheck="false" autocomplete="off">
+            <button class="search-btn" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('load', () => { requestAnimationFrame(() => document.body.classList.add('loaded')); });
+
+        document.querySelectorAll('a[href]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+
+                if (href && !href.startsWith('#') && !href.startsWith('http')) {
+                    e.preventDefault();
+                    document.body.style.transition = 'opacity 0.3s ease';
+                    document.body.style.opacity = '0';
+                    setTimeout(() => { window.location.href = href; }, 310);
+                }
+            });
+        });
+
+        function openKeyPopup() {
+            document.getElementById('keyPopup').classList.add('show');
+            document.getElementById('keyOverlay').classList.add('show');
+        }
+        function closeKeyPopup() {
+            document.getElementById('keyPopup').classList.remove('show');
+            document.getElementById('keyOverlay').classList.remove('show');
+        }
+
+
+
+        // Зрителю убираем href у кнопки создания — браузер не сможет перейти
+        (function() {
+            if (localStorage.getItem('role') !== 'viewer') return;
+            var btn = document.querySelector('a.nav-item[href="create.html"]');
+            if (!btn) return;
+            btn.removeAttribute('href');
+            btn.style.cursor = 'pointer';
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openKeyPopup();
+            }, true); // true = capture phase, срабатывает первым
+        })();
+    </script>
+</body>
+</html>

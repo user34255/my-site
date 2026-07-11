@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        @font-face {
+            font-family: 'basis33';
+            src: url('basis33.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* ── Плавный вход / выход страницы ─────────────────── */
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'basis33', 'Press Start 2P', monospace;
+            overflow: hidden;
+            background-color: #0f141c;
+            position: relative;
+
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        body.loaded { opacity: 1; }
+
+        /* ── Задний фон ────────────────────────────────────── */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+
+            /* ТУТ ВСТАВЬ ПУТЬ К СВОЕЙ КАРТИНКЕ */
+            background: url('f.png') no-repeat center center fixed;
+            background-size: cover;
+
+            filter: blur(10px);
+            transform: scale(1.05);
+            z-index: -1;
+        }
+
+        /* ── Зона триггера для панели ──────────────────────── */
+        .top-nav-zone {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 50px;
+            z-index: 9999;
+        }
+
+        /* ── Стеклянная подложка панели ───────────────────── */
+        .navbar-container {
+            position: fixed;
+            top: -160px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 940px;
+            padding: 20px 35px;
+            border-radius: 0 0 60px 60px;
+
+            /* Усиленное стекло: градиент с яркой верхней гранью */
+            background: linear-gradient(
+                160deg,
+                rgba(255, 255, 255, 0.14) 0%,
+                rgba(255, 255, 255, 0.05) 45%,
+                rgba(255, 255, 255, 0.01) 100%
+            );
+            backdrop-filter: blur(14px) saturate(1.5);
+            -webkit-backdrop-filter: blur(14px) saturate(1.5);
+
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-top: none;
+            box-shadow:
+                0 24px 50px rgba(0, 0, 0, 0.38),
+                /* Внутренняя верхняя светлая грань — эффект стекла */
+                inset 0  1px 0 rgba(255, 255, 255, 0.22),
+                inset 1px 0 0 rgba(255, 255, 255, 0.07),
+                inset -1px 0 0 rgba(255, 255, 255, 0.07);
+
+            transition: top 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.12);
+            z-index: 10000;
+        }
+
+        .top-nav-zone:hover + .navbar-container,
+        .navbar-container:hover {
+            top: 0;
+        }
+
+        /* ── Внутреннее бирюзовое основание ───────────────── */
+        .navbar-inner {
+            background: #00969d;
+            border-radius: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 25px;
+            width: 100%;
+            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ── Кнопки меню ──────────────────────────────────── */
+        .nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 62px; height: 62px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.75);
+            /* Пружинящий переход */
+            transition:
+                background   0.28s ease,
+                border-color 0.28s ease,
+                box-shadow   0.28s ease,
+                transform    0.3s  cubic-bezier(0.34, 1.5, 0.64, 1);
+            border: 1px solid transparent;
+            background: transparent;
+            text-decoration: none;
+        }
+
+        .nav-item svg {
+            width: 28px; height: 28px;
+            display: block;
+            transition: filter 0.28s ease, color 0.28s ease;
+        }
+
+        /* ── Центральная плашка ───────────────────────────── */
+
+        /* ── Группы кнопок ───────────────────── */
+        .nav-group {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav-group-right { justify-content: flex-end; }
+        .nav-spacer {
+            width: 320px; height: 62px;
+            background: #007c85;
+            border-radius: 35px;
+            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.25);
+        }
+
+        /* ── Стеклянный эффект кнопок (hover + active) ────── */
+        .nav-item:hover,
+        .nav-item.active {
+            background: linear-gradient(
+                145deg,
+                rgba(255, 255, 255, 0.30) 0%,
+                rgba(255, 255, 255, 0.08) 100%
+            );
+            backdrop-filter: blur(10px) saturate(1.6);
+            -webkit-backdrop-filter: blur(10px) saturate(1.6);
+            border: 1px solid rgba(255, 255, 255, 0.38);
+            box-shadow:
+                /* Яркая верхняя грань — главный маркер "стекла" */
+                inset 0  1px 0 rgba(255, 255, 255, 0.40),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.10),
+                0 6px 16px rgba(0, 0, 0, 0.20);
+            transform: scale(1.06);
+            color: #ffffff;
+        }
+
+        .nav-item:hover svg,
+        .nav-item.active svg {
+            color: #ffffff;
+            filter: drop-shadow(0 0 5px #ffffff) drop-shadow(0 0 12px rgba(255, 255, 255, 0.9));
+        }
+
+        /* ── Центральная карточка ─────────────────────────── */
+        .center-card {
+            position: relative;
+            z-index: 10;
+
+            background: linear-gradient(
+                145deg,
+                rgba(255, 255, 255, 0.11) 0%,
+                rgba(255, 255, 255, 0.04) 50%,
+                rgba(255, 255, 255, 0.01) 100%
+            );
+            backdrop-filter: blur(14px) saturate(1.5);
+            -webkit-backdrop-filter: blur(14px) saturate(1.5);
+
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 120px;
+            padding: 55px 85px;
+            box-shadow:
+                0 32px 70px rgba(0, 0, 0, 0.38),
+                /* Двойное обрамление: тонкое внешнее + внутренняя грань */
+                0 0 0 1px rgba(255, 255, 255, 0.06),
+                inset 0  1px 0 rgba(255, 255, 255, 0.24),
+                inset 0 -2px 0 rgba(0, 0, 0, 0.14);
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 740px;
+            max-width: 95%;
+
+            /* Лёгкое появление карточки */
+            animation: cardIn 0.5s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+            animation-delay: 0.15s;
+        }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(18px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0)    scale(1);    }
+        }
+
+        /* ── Поле ввода ───────────────────────────────────── */
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .key-input {
+            width: 100%;
+            padding: 22px 80px 22px 40px;
+            border: none;
+            border-radius: 50px;
+            font-family: 'basis33', 'Press Start 2P', monospace;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-align: center;
+            color: #00878f;
+            background: #ffffff;
+            outline: none;
+            text-transform: uppercase;
+            caret-color: #00878f;
+            box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.2);
+
+            /* Плавный переход при фокусе */
+            transition:
+                box-shadow    0.35s ease,
+                letter-spacing 0.25s ease;
+        }
+
+        /* Фокус: тонкое тиловое свечение + расширение межсимвольного интервала */
+        .key-input:focus {
+            box-shadow:
+                inset 0 4px 8px rgba(0, 0, 0, 0.20),
+                0 0 0 3px rgba(0, 150, 157, 0.28),
+                0 0 22px rgba(0, 150, 157, 0.14);
+            letter-spacing: 3px;
+        }
+
+        .key-input::placeholder {
+            font-family: 'basis33', 'Press Start 2P', monospace;
+            color: #00878f;
+            opacity: 0.8;
+            font-size: 24px;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Плейсхолдер тускнеет при вводе */
+        .key-input:focus::placeholder { opacity: 0.30; }
+
+        /* ── Кнопка-стрелка ───────────────────────────────── */
+        .arrow-btn {
+            position: absolute;
+            right: 10px;
+            background: transparent;
+            border: 1px solid rgba(0, 135, 143, 0.2);
+            border-radius: 50%;
+            cursor: pointer;
+            width: 52px; height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #00878f;
+            transition: all 0.28s cubic-bezier(0.34, 1.5, 0.64, 1);
+        }
+
+        .arrow-btn:hover {
+            background: rgba(0, 135, 143, 0.10);
+            border-color: rgba(0, 135, 143, 0.48);
+            /* Пружинящее движение вправо */
+            transform: scale(1.08) translateX(2px);
+            box-shadow: 0 0 14px rgba(0, 135, 143, 0.22);
+        }
+
+        .arrow-btn svg {
+            width: 26px; height: 26px;
+            transition: transform 0.28s cubic-bezier(0.34, 1.5, 0.64, 1);
+        }
+
+        /* Стрелка тоже сдвигается при hover */
+        .arrow-btn:hover svg { transform: translateX(3px); }
+
+        /* ── Кнопка «Я зритель» ───────────────────────────── */
+        .spectator-btn {
+            background: linear-gradient(
+                145deg,
+                rgba(255, 255, 255, 0.20) 0%,
+                rgba(255, 255, 255, 0.06) 100%
+            );
+            backdrop-filter: blur(10px) saturate(1.4);
+            -webkit-backdrop-filter: blur(10px) saturate(1.4);
+            border: 1px solid rgba(255, 255, 255, 0.30);
+            color: #ffffff;
+            padding: 12px 42px;
+            border-radius: 50px;
+            font-family: 'basis33', 'Press Start 2P', monospace;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow:
+                0 4px 16px rgba(0, 0, 0, 0.18),
+                inset 0 1px 0 rgba(255, 255, 255, 0.28);
+
+            transition:
+                background   0.3s ease,
+                border-color 0.3s ease,
+                box-shadow   0.3s ease,
+                transform    0.3s cubic-bezier(0.34, 1.5, 0.64, 1);
+        }
+
+        .spectator-btn:hover {
+            background: linear-gradient(
+                145deg,
+                rgba(255, 255, 255, 0.34) 0%,
+                rgba(255, 255, 255, 0.12) 100%
+            );
+            border-color: rgba(255, 255, 255, 0.48);
+            box-shadow:
+                0 0 26px rgba(255, 255, 255, 0.40),
+                0 10px 24px rgba(0, 0, 0, 0.22),
+                inset 0 1px 0 rgba(255, 255, 255, 0.42);
+            /* Всплытие вверх */
+            transform: translateY(-3px);
+        }
+
+        .spectator-btn:active { transform: translateY(0); }
+    </style>
+</head>
+<body>
+
+    <div class="top-nav-zone"></div>
+
+    <div class="navbar-container">
+        <div class="navbar-inner" style="justify-content:center">
+            <div class="nav-spacer"></div>
+        </div>
+    </div>
+
+    <div class="center-card">
+        <div class="input-wrapper">
+            <input type="text" class="key-input" placeholder="ВВЕДИТЕ КЛЮЧ" maxlength="15">
+            <button class="arrow-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </button>
+        </div>
+        <button class="spectator-btn">Я зритель</button>
+    </div>
+
+    <script>
+        // ── Плавное появление страницы ─────────────────────
+        window.addEventListener('load', () => {
+            requestAnimationFrame(() => document.body.classList.add('loaded'));
+        });
+
+        // ── Плавный уход со страницы при переходе ─────────
+        document.querySelectorAll('a[href]').forEach(link => {
+            link.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href && !href.startsWith('#') && !href.startsWith('http') && !href.startsWith('mailto')) {
+                    e.preventDefault();
+                    document.body.style.transition = 'opacity 0.3s ease';
+                    document.body.style.opacity = '0';
+                    setTimeout(() => { window.location.href = href; }, 310);
+                }
+            });
+        });
+
+        // ── Белый список ключей ────────────────────────────
+        const VALID_KEYS = ['WAJH-ZX6C-PAGS'];
+
+        // ── Плавный переход на страницу ────────────────────
+        function goTo(page) {
+            document.body.style.transition = 'opacity 0.3s ease';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = page; }, 310);
+        }
+
+        // ── Кнопка «Я зритель» ────────────────────────────
+        document.querySelector('.spectator-btn').addEventListener('click', function () {
+            localStorage.setItem('role', 'viewer');
+            goTo('news.html');
+        });
+
+        // ── Ввод ключа доступа ────────────────────────────
+        function submitKey() {
+            const val = document.querySelector('.key-input').value.trim().toUpperCase();
+            if (VALID_KEYS.includes(val)) {
+                localStorage.setItem('role', 'member');
+                goTo('news.html');
+            } else {
+                const input = document.querySelector('.key-input');
+                input.style.transition = 'box-shadow 0.15s ease, color 0.15s ease';
+                input.style.boxShadow = '0 0 0 3px rgba(220,60,60,0.45), inset 0 4px 8px rgba(0,0,0,0.2)';
+                input.style.color = '#c0392b';
+                setTimeout(() => {
+                    input.style.boxShadow = '';
+                    input.style.color = '#00878f';
+                }, 900);
+            }
+        }
+
+        document.querySelector('.arrow-btn').addEventListener('click', submitKey);
+        document.querySelector('.key-input').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') submitKey();
+        });
+
+        // ── Переключение активной кнопки ──────────────────
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                if (item.tagName === 'A' && item.getAttribute('href') !== '#') return;
+                navItems.forEach(el => el.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
