@@ -4,579 +4,419 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Профиль</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
-        @font-face {
-            font-family: 'basis33';
-            src: url('basis33.ttf') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        /* ── Плавный вход / выход страницы ─────────────────── */
-        body {
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'basis33', 'Press Start 2P', monospace;
-            overflow: hidden;
-            background-color: #0f141c;
-            position: relative;
-
-            opacity: 0;
-            transition: opacity 0.4s ease;
-        }
-
-        body.loaded { opacity: 1; }
-
-        /* ── Задний фон ────────────────────────────────────── */
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: url('f.png') no-repeat center center fixed;
-            background-size: cover;
-            filter: blur(10px);
-            transform: scale(1.05);
-            z-index: -1;
-        }
-
-        /* ── Зона триггера для панели ──────────────────────── */
-        .top-nav-zone {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 50px;
-            z-index: 9999;
-        }
-
-        /* ── Стеклянная подложка панели ───────────────────── */
-        .navbar-container {
-            position: fixed;
-            top: -160px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 940px;
-            padding: 20px 35px;
-            border-radius: 0 0 60px 60px;
-
-            background: linear-gradient(
-                160deg,
-                rgba(255, 255, 255, 0.14) 0%,
-                rgba(255, 255, 255, 0.05) 45%,
-                rgba(255, 255, 255, 0.01) 100%
-            );
-            backdrop-filter: blur(14px) saturate(1.5);
-            -webkit-backdrop-filter: blur(14px) saturate(1.5);
-
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            border-top: none;
-            box-shadow:
-                0 24px 50px rgba(0, 0, 0, 0.38),
-                inset 0  1px 0 rgba(255, 255, 255, 0.22),
-                inset 1px 0 0 rgba(255, 255, 255, 0.07),
-                inset -1px 0 0 rgba(255, 255, 255, 0.07);
-
-            transition: top 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.12);
-            z-index: 10000;
-        }
-
-        .top-nav-zone:hover + .navbar-container,
-        .navbar-container:hover {
-            top: 0;
-        }
-
-        /* ── Внутреннее бирюзовое основание ───────────────── */
-        .navbar-inner {
-            background: #00969d;
-            border-radius: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 25px;
-            width: 100%;
-            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.3);
-        }
-
-        /* ── Кнопки меню ──────────────────────────────────── */
-        .nav-item {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 62px; height: 62px;
-            border-radius: 50%;
-            cursor: pointer;
-            color: rgba(255, 255, 255, 0.75);
-            transition:
-                background   0.28s ease,
-                border-color 0.28s ease,
-                box-shadow   0.28s ease,
-                transform    0.3s  cubic-bezier(0.34, 1.5, 0.64, 1);
-            border: 1px solid transparent;
-            background: transparent;
-            text-decoration: none;
-        }
-
-        .nav-item svg {
-            width: 28px; height: 28px;
-            display: block;
-            transition: filter 0.28s ease, color 0.28s ease;
-        }
-
-        .nav-spacer {
-            flex-shrink: 0;
-            width: 320px; height: 62px;
-            background: #007c85;
-            border-radius: 35px;
-            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.25);
-        }
-
-        /* ── Стеклянный эффект кнопок ─────────────────────── */
-        .nav-item:hover,
-        .nav-item.active {
-            background: linear-gradient(
-                145deg,
-                rgba(255, 255, 255, 0.30) 0%,
-                rgba(255, 255, 255, 0.08) 100%
-            );
-            backdrop-filter: blur(10px) saturate(1.6);
-            -webkit-backdrop-filter: blur(10px) saturate(1.6);
-            border: 1px solid rgba(255, 255, 255, 0.38);
-            box-shadow:
-                inset 0  1px 0 rgba(255, 255, 255, 0.40),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.10),
-                0 6px 16px rgba(0, 0, 0, 0.20);
-            transform: scale(1.06);
-            color: #ffffff;
-        }
-
-        .nav-item:hover svg,
-        .nav-item.active svg {
-            color: #ffffff;
-            filter: drop-shadow(0 0 5px #ffffff) drop-shadow(0 0 12px rgba(255, 255, 255, 0.9));
-        }
-
-        /* ── Карточка профиля ─────────────────────────────── */
-        .profile-card {
-            position: relative;
-            z-index: 10;
-
-            background: linear-gradient(
-                145deg,
-                rgba(255, 255, 255, 0.10) 0%,
-                rgba(255, 255, 255, 0.04) 50%,
-                rgba(255, 255, 255, 0.01) 100%
-            );
-            backdrop-filter: blur(14px) saturate(1.5);
-            -webkit-backdrop-filter: blur(14px) saturate(1.5);
-
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            border-radius: 80px;
-            padding: 50px 70px;
-            box-shadow:
-                0 32px 70px rgba(0, 0, 0, 0.38),
-                0 0 0 1px rgba(255, 255, 255, 0.06),
-                inset 0  1px 0 rgba(255, 255, 255, 0.24),
-                inset 0 -2px 0 rgba(0, 0, 0, 0.14);
-
-            display: flex;
-            justify-content: space-between;
-            width: 940px;
-            max-width: 95%;
-            min-height: 440px;
-
-            /* Лёгкое появление карточки */
-            animation: cardIn 0.5s cubic-bezier(0.34, 1.2, 0.64, 1) both;
-            animation-delay: 0.15s;
-        }
-
-        @keyframes cardIn {
-            from { opacity: 0; transform: translateY(18px) scale(0.97); }
-            to   { opacity: 1; transform: translateY(0)    scale(1);    }
-        }
-
-        /* ── Левая сторона ────────────────────────────────── */
-        .profile-left {
-            display: flex;
-            flex-direction: column;
-            gap: 35px;
-            width: 48%;
-        }
-
-        .user-block {
-            display: flex;
-            align-items: center;
-            gap: 25px;
-        }
-
-        .avatar-circle {
-            width: 130px; height: 130px;
-            background: #ffffff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #00969d;
-            box-shadow:
-                0 8px 20px rgba(0, 0, 0, 0.18),
-                0 0 0 1px rgba(255, 255, 255, 0.15);
-            transition: box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
-        }
-
-        .avatar-circle:hover {
-            transform: scale(1.03);
-            box-shadow:
-                0 12px 30px rgba(0, 0, 0, 0.22),
-                0 0 24px rgba(0, 150, 157, 0.20),
-                0 0 0 1px rgba(255, 255, 255, 0.25);
-        }
-
-        .avatar-circle svg {
-            width: 65px; height: 65px;
-        }
-
-        .user-name {
-            font-size: 54px;
-            font-weight: bold;
-            color: #00a4ad;
-            letter-spacing: 1px;
-        }
-
-        /* ── Меню действий ────────────────────────────────── */
-        .action-menu {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .action-item {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        .action-circle {
-            width: 54px; height: 54px;
-            background: #ffffff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #00969d;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-            transition:
-                transform  0.28s cubic-bezier(0.34, 1.5, 0.64, 1),
-                box-shadow 0.28s ease;
-        }
-
-        .action-circle svg {
-            width: 24px; height: 24px;
-            transition: filter 0.28s ease;
-        }
-
-        .action-text {
-            font-size: 24px;
-            color: #ffffff;
-            letter-spacing: 1px;
-            transition: color 0.25s ease;
-        }
-
-        /* Пружинящий scale + тиловое свечение на иконке */
-        .action-item:hover .action-circle {
-            transform: scale(1.10);
-            box-shadow:
-                0 6px 18px rgba(0, 0, 0, 0.16),
-                0 0 16px rgba(0, 150, 157, 0.28);
-        }
-
-        .action-item:hover .action-circle svg {
-            filter: drop-shadow(0 0 4px rgba(0, 150, 157, 0.6));
-        }
-
-        .action-item:hover .action-text { color: #00a4ad; }
-
-        /* ── Правая сторона: друзья ───────────────────────── */
-        .profile-right {
-            width: 42%;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-            padding-top: 15px;
-            overflow: hidden;
-        }
-
-        .friends-title {
-            font-size: 32px;
-            color: #ffffff;
-            letter-spacing: 4px;
-            font-weight: normal;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-            padding-bottom: 10px;
-            text-transform: uppercase;
-        }
-
-        .friends-list {
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-            width: 100%;
-        }
-
-        /* Строка друга с hover-подсветкой */
-        .friend-row {
-            display: grid;
-            grid-template-columns: 1fr 0.5fr 2fr;
-            gap: 10px;
-            font-size: 18px;
-            color: rgba(255, 255, 255, 0.85);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            width: 100%;
-            align-items: center;
-
-            padding: 6px 10px;
-            border-radius: 12px;
-            margin: 0 -10px;
-            transition: background 0.22s ease;
-        }
-
-        .friend-row:hover {
-            background: rgba(255, 255, 255, 0.06);
-        }
-
-        .friend-name {
-            color: #ffffff;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .friend-count {
-            color: rgba(255, 255, 255, 0.6);
-            text-align: center;
-        }
-
-        .friend-status {
-            color: rgba(255, 255, 255, 0.85);
-            text-align: left;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        /* ── Попап «нужен ключ» ────────────────────────────── */
-        .key-popup {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.85);
-            z-index: 99999;
-            background: linear-gradient(145deg, rgba(255,255,255,0.13), rgba(255,255,255,0.05));
-            backdrop-filter: blur(20px) saturate(1.6);
-            -webkit-backdrop-filter: blur(20px) saturate(1.6);
-            border: 1px solid rgba(255,255,255,0.22);
-            border-radius: 48px;
-            padding: 42px 60px;
-            text-align: center;
-            box-shadow: 0 24px 60px rgba(0,0,0,0.45),
-                        inset 0 1px 0 rgba(255,255,255,0.28);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.34,1.3,0.64,1);
-        }
-        .key-popup.show {
-            opacity: 1;
-            pointer-events: all;
-            transform: translate(-50%, -50%) scale(1);
-        }
-        .key-popup-icon {
-            font-size: 48px;
-            margin-bottom: 18px;
-            display: block;
-            filter: drop-shadow(0 0 12px rgba(0,188,212,0.6));
-        }
-        .key-popup-title {
-            font-family: 'basis33', monospace;
-            font-size: 28px;
-            color: #ffffff;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 12px;
-        }
-        .key-popup-text {
-            font-family: 'basis33', monospace;
-            font-size: 20px;
-            color: rgba(255,255,255,0.7);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            line-height: 1.5;
-            margin-bottom: 30px;
-        }
-        .key-popup-close {
-            background: #00969d;
-            border: none;
-            border-radius: 50px;
-            padding: 12px 44px;
-            font-family: 'basis33', monospace;
-            font-size: 20px;
-            letter-spacing: 2px;
-            color: #ffffff;
-            text-transform: uppercase;
-            cursor: pointer;
-            box-shadow: 0 6px 20px rgba(0,150,157,0.45);
-            transition: background 0.25s ease, transform 0.25s cubic-bezier(0.34,1.5,0.64,1);
-        }
-        .key-popup-close:hover {
-            background: #00b0b8;
-            transform: translateY(-2px);
-        }
-        .key-popup-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 99998;
-            display: none;
-        }
-        .key-popup-overlay.show { display: block; }
-    </style>
     <script>
         (function(){
             var r = localStorage.getItem('role');
-            if (!r) { window.location.replace('index.html'); return; }
+            if (!r) { window.location.replace('index.html'); }
         })();
     </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @font-face { font-family:'basis33'; src:url('basis33.ttf') format('truetype'); }
+        * { box-sizing:border-box; margin:0; padding:0; }
+
+        body {
+            height:100vh; display:flex; justify-content:center; align-items:center;
+            font-family:'basis33',sans-serif; overflow:hidden;
+            background-color:#0f141c; position:relative;
+            opacity:0; transition:opacity 0.4s ease;
+        }
+        body.loaded { opacity:1; }
+        body::before {
+            content:""; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:url('f.png') no-repeat center center fixed;
+            background-size:cover; filter:blur(10px); transform:scale(1.05); z-index:-1;
+        }
+
+        /* ── Навигация ───────────────────────────────── */
+        .top-nav-zone { position:fixed; top:0; left:0; width:100%; height:50px; z-index:9999; }
+        .navbar-container {
+            position:fixed; top:-160px; left:50%; transform:translateX(-50%);
+            width:940px; padding:20px 35px; border-radius:0 0 60px 60px;
+            background:linear-gradient(160deg,rgba(255,255,255,0.14) 0%,rgba(255,255,255,0.05) 45%,rgba(255,255,255,0.01) 100%);
+            backdrop-filter:blur(14px) saturate(1.5); -webkit-backdrop-filter:blur(14px) saturate(1.5);
+            border:1px solid rgba(255,255,255,0.18); border-top:none;
+            box-shadow:0 24px 50px rgba(0,0,0,0.38),inset 0 1px 0 rgba(255,255,255,0.22);
+            transition:top 0.45s cubic-bezier(0.175,0.885,0.32,1.12); z-index:10000;
+        }
+        .top-nav-zone:hover + .navbar-container, .navbar-container:hover { top:0; }
+        .navbar-inner {
+            background:#00969d; border-radius:48px; display:flex; align-items:center;
+            justify-content:space-between; padding:10px 25px; width:100%;
+            box-shadow:inset 0 3px 6px rgba(0,0,0,0.3);
+        }
+        .nav-item {
+            display:flex; align-items:center; justify-content:center;
+            width:62px; height:62px; border-radius:50%; cursor:pointer;
+            color:rgba(255,255,255,0.75);
+            transition:background 0.28s,border-color 0.28s,box-shadow 0.28s,transform 0.3s cubic-bezier(0.34,1.5,0.64,1);
+            border:1px solid transparent; background:transparent; text-decoration:none;
+        }
+        .nav-item svg { width:28px; height:28px; display:block; transition:filter 0.28s,color 0.28s; }
+        .nav-spacer { flex-shrink:0; width:320px; height:62px; background:#007c85; border-radius:35px; box-shadow:inset 0 3px 6px rgba(0,0,0,0.25); }
+        .nav-item:hover,.nav-item.active {
+            background:linear-gradient(145deg,rgba(255,255,255,0.30),rgba(255,255,255,0.08));
+            backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.38);
+            box-shadow:inset 0 1px 0 rgba(255,255,255,0.40),0 6px 16px rgba(0,0,0,0.20);
+            transform:scale(1.06); color:#fff;
+        }
+        .nav-item:hover svg,.nav-item.active svg { color:#fff; filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 12px rgba(255,255,255,0.9)); }
+
+        /* ── Карточка профиля ────────────────────────── */
+        .profile-card {
+            position:relative; z-index:10;
+            background:linear-gradient(145deg,rgba(255,255,255,0.10) 0%,rgba(255,255,255,0.04) 50%,rgba(255,255,255,0.01) 100%);
+            backdrop-filter:blur(14px) saturate(1.5); -webkit-backdrop-filter:blur(14px) saturate(1.5);
+            border:1px solid rgba(255,255,255,0.18); border-radius:80px; padding:50px 70px;
+            box-shadow:0 32px 70px rgba(0,0,0,0.38),0 0 0 1px rgba(255,255,255,0.06),inset 0 1px 0 rgba(255,255,255,0.24);
+            display:flex; justify-content:space-between; width:940px; max-width:95%; min-height:440px;
+            animation:cardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) both; animation-delay:0.15s;
+        }
+        @keyframes cardIn { from{opacity:0;transform:translateY(18px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+        /* ── Левая сторона ───────────────────────────── */
+        .profile-left { display:flex; flex-direction:column; gap:30px; width:48%; }
+
+        .user-block { display:flex; align-items:center; gap:20px; }
+        .avatar-wrap { position:relative; cursor:pointer; flex-shrink:0; }
+        .avatar-circle {
+            width:120px; height:120px; background:#fff; border-radius:50%;
+            display:flex; align-items:center; justify-content:center; color:#00969d;
+            box-shadow:0 8px 20px rgba(0,0,0,0.18); overflow:hidden;
+            transition:box-shadow 0.3s,transform 0.3s cubic-bezier(0.34,1.4,0.64,1);
+        }
+        .avatar-circle:hover { transform:scale(1.04); box-shadow:0 12px 30px rgba(0,0,0,0.22),0 0 24px rgba(0,150,157,0.25); }
+        .avatar-circle img { width:100%; height:100%; object-fit:cover; }
+        .avatar-circle svg { width:60px; height:60px; }
+        .avatar-edit-hint {
+            position:absolute; bottom:-4px; right:-4px;
+            background:#00969d; border-radius:50%; width:28px; height:28px;
+            display:flex; align-items:center; justify-content:center;
+            box-shadow:0 2px 8px rgba(0,0,0,0.3); pointer-events:none;
+        }
+        .avatar-edit-hint svg { width:14px; height:14px; color:#fff; }
+        .avatar-input { display:none; }
+
+        .user-info { display:flex; flex-direction:column; gap:10px; }
+        .user-name {
+            font-size:46px; font-weight:bold; color:#00a4ad;
+            background:none; border:none; border-bottom:2px solid transparent;
+            outline:none; font-family:'basis33',sans-serif; cursor:pointer;
+            transition:border-color 0.25s;
+        }
+        .user-name:focus { border-bottom-color:#00969d; color:#00d0dc; }
+        .save-nick-btn {
+            display:none; background:#00969d; border:none; border-radius:20px;
+            padding:6px 18px; font-family:'basis33',monospace; font-size:14px;
+            color:#fff; letter-spacing:1px; cursor:pointer; text-transform:uppercase;
+            transition:background 0.2s;
+        }
+        .save-nick-btn:hover { background:#00b0b8; }
+        .save-nick-btn.visible { display:block; }
+        .profile-status { font-size:15px; color:rgba(255,255,255,0.4); letter-spacing:1px; text-transform:uppercase; }
+
+        /* ── Меню действий ───────────────────────────── */
+        .action-menu { display:flex; flex-direction:column; gap:18px; }
+        .action-item { display:flex; align-items:center; gap:18px; cursor:pointer; text-decoration:none; }
+        .action-circle {
+            width:52px; height:52px; background:#fff; border-radius:50%;
+            display:flex; align-items:center; justify-content:center; color:#00969d;
+            box-shadow:0 4px 10px rgba(0,0,0,0.12);
+            transition:transform 0.28s cubic-bezier(0.34,1.5,0.64,1),box-shadow 0.28s;
+        }
+        .action-circle svg { width:22px; height:22px; transition:filter 0.28s; }
+        .action-text { font-size:24px; color:#fff; letter-spacing:1px; transition:color 0.25s; }
+        .action-item:hover .action-circle { transform:scale(1.10); box-shadow:0 6px 18px rgba(0,0,0,0.16),0 0 16px rgba(0,150,157,0.28); }
+        .action-item:hover .action-circle svg { filter:drop-shadow(0 0 4px rgba(0,150,157,0.6)); }
+        .action-item:hover .action-text { color:#00a4ad; }
+
+        /* ── Правая сторона — друзья ─────────────────── */
+        .profile-right { width:42%; display:flex; flex-direction:column; gap:20px; padding-top:10px; overflow:hidden; }
+        .friends-title { font-size:28px; color:#fff; letter-spacing:3px; font-weight:normal; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.12); padding-bottom:10px; }
+
+        .add-friend-row { display:flex; gap:8px; }
+        .friend-search-input {
+            flex:1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18);
+            border-radius:30px; padding:8px 16px; outline:none;
+            font-family:'basis33',monospace; font-size:16px; color:#fff; letter-spacing:1px;
+            transition:border-color 0.25s;
+        }
+        .friend-search-input::placeholder { color:rgba(255,255,255,0.35); }
+        .friend-search-input:focus { border-color:#00969d; }
+        .add-friend-btn {
+            background:#00969d; border:none; border-radius:30px; padding:8px 18px;
+            font-family:'basis33',monospace; font-size:16px; color:#fff; cursor:pointer;
+            text-transform:uppercase; letter-spacing:1px; white-space:nowrap;
+            transition:background 0.22s,transform 0.22s cubic-bezier(0.34,1.5,0.64,1);
+        }
+        .add-friend-btn:hover { background:#00b0b8; transform:scale(1.05); }
+
+        .friends-list { display:flex; flex-direction:column; gap:12px; overflow-y:auto; max-height:240px; }
+        .friends-list::-webkit-scrollbar { width:4px; }
+        .friends-list::-webkit-scrollbar-thumb { background:rgba(0,150,157,0.4); border-radius:4px; }
+        .friend-row {
+            display:flex; align-items:center; gap:12px;
+            padding:6px 8px; border-radius:12px; cursor:pointer;
+            transition:background 0.22s; text-decoration:none;
+        }
+        .friend-row:hover { background:rgba(255,255,255,0.07); }
+        .friend-avatar { width:32px; height:32px; background:#00969d; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; overflow:hidden; }
+        .friend-avatar img { width:100%; height:100%; object-fit:cover; }
+        .friend-avatar svg { width:16px; height:16px; }
+        .friend-nick { font-family:'basis33',monospace; font-size:18px; color:#fff; letter-spacing:1px; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .friend-status { font-size:14px; color:rgba(255,255,255,0.4); letter-spacing:1px; white-space:nowrap; }
+        .friend-pending { color:#ffb74d; }
+        .no-friends { font-family:'basis33',monospace; font-size:16px; color:rgba(255,255,255,0.35); text-transform:uppercase; text-align:center; padding:20px 0; }
+
+        /* ── Выйти ───────────────────────────────────── */
+        .logout-btn {
+            margin-top:auto; background:rgba(220,60,60,0.18); border:1px solid rgba(220,60,60,0.35);
+            border-radius:30px; padding:8px 20px; font-family:'basis33',monospace; font-size:16px;
+            color:rgba(255,100,100,0.85); cursor:pointer; letter-spacing:1px; text-transform:uppercase;
+            transition:all 0.25s ease; align-self:flex-start;
+        }
+        .logout-btn:hover { background:rgba(220,60,60,0.32); color:#ff6060; }
+    </style>
 </head>
 <body>
-
-    
-    <!-- Попап: нужен ключ -->
-    <div class="key-popup-overlay" id="keyOverlay" onclick="closeKeyPopup()"></div>
-    <div class="key-popup" id="keyPopup">
-        <span class="key-popup-icon">🔑</span>
-        <div class="key-popup-title">Доступ закрыт</div>
-        <div class="key-popup-text">Для публикации историй<br>нужен ключ доступа</div>
-        <button class="key-popup-close" onclick="closeKeyPopup()">Понятно</button>
-    </div>
-
     <div class="top-nav-zone"></div>
-
     <div class="navbar-container">
         <div class="navbar-inner">
-            <a href="search.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></a>
-            <a href="news.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></svg></a>
+            <a href="search.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></a>
+            <a href="news.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></a>
             <div class="nav-spacer"></div>
-            <a href="create.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg></a>
-            <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+            <a href="create.html" class="nav-item" id="createNavBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></a>
+            <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
         </div>
     </div>
 
     <div class="profile-card">
-
         <div class="profile-left">
             <div class="user-block">
-                <div class="avatar-circle">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                <div class="avatar-wrap" onclick="document.getElementById('avatarInput').click()">
+                    <div class="avatar-circle" id="avatarCircle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    </div>
+                    <div class="avatar-edit-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
                 </div>
-                <div class="user-name">Ник</div>
+                <input type="file" accept="image/*" id="avatarInput" class="avatar-input">
+                <div class="user-info">
+                    <input class="user-name" id="nickInput" type="text" maxlength="30" spellcheck="false">
+                    <button class="save-nick-btn" id="saveNickBtn" onclick="saveNickname()">Сохранить</button>
+                    <div class="profile-status" id="profileStatus"></div>
+                </div>
             </div>
 
             <div class="action-menu">
-                <div class="action-item">
+                <a href="my-stories.html" class="action-item">
                     <div class="action-circle">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
                     </div>
                     <div class="action-text">Мои истории</div>
-                </div>
-                <div class="action-item">
+                </a>
+                <a href="my-media.html" class="action-item">
                     <div class="action-circle">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
                     </div>
                     <div class="action-text">Мои медиа</div>
-                </div>
+                </a>
             </div>
+
+            <button class="logout-btn" onclick="logout()">Выйти</button>
         </div>
 
         <div class="profile-right">
             <h2 class="friends-title">Друзья</h2>
-            <div class="friends-list">
-                <div class="friend-row">
-                    <span class="friend-name">Ник</span>
-                    <span class="friend-count">21</span>
-                    <span class="friend-status">истории/2медиа</span>
-                </div>
-                <div class="friend-row">
-                    <span class="friend-name">Ник</span>
-                    <span class="friend-count">21</span>
-                    <span class="friend-status">истории/2медиа</span>
-                </div>
+            <div class="add-friend-row" id="addFriendRow">
+                <input class="friend-search-input" id="friendNickInput" placeholder="Ник пользователя" maxlength="30" spellcheck="false">
+                <button class="add-friend-btn" onclick="addFriend()">+ Добавить</button>
+            </div>
+            <div class="friends-list" id="friendsList">
+                <div class="no-friends">Загрузка...</div>
             </div>
         </div>
-
     </div>
 
+    <script src="config.js"></script>
     <script>
-        // ── Плавное появление страницы ─────────────────────
-        window.addEventListener('load', () => {
+        const user = getCurrentUser();
+        let originalNick = '';
+
+        window.addEventListener('load', async () => {
             requestAnimationFrame(() => document.body.classList.add('loaded'));
+
+            if (!user) { goTo('index.html'); return; }
+
+            // Скрыть кнопку create для зрителей
+            if (localStorage.getItem('role') === 'viewer') {
+                const cb = document.getElementById('createNavBtn');
+                if (cb) cb.style.visibility = 'hidden';
+                document.getElementById('addFriendRow').style.display = 'none';
+            }
+
+            // Показать данные пользователя
+            await loadProfile();
+            await loadFriends();
         });
 
-        // ── Плавный уход со страницы при переходе ─────────
-        document.querySelectorAll('a[href]').forEach(link => {
-            link.addEventListener('click', function (e) {
-                const href = this.getAttribute('href');
+        async function loadProfile() {
+            try {
+                // Обновить данные из БД
+                const users = await sbSelect('users', `id=eq.${user.id}&select=id,nickname,avatar_url`);
+                if (users.length) {
+                    const fresh = users[0];
+                    // Обновить localStorage
+                    localStorage.setItem('user', JSON.stringify({...user, ...fresh}));
+                    // Показать аватар
+                    if (fresh.avatar_url) {
+                        document.getElementById('avatarCircle').innerHTML = `<img src="${fresh.avatar_url}" alt="">`;
+                    }
+                    // Показать ник
+                    document.getElementById('nickInput').value = fresh.nickname;
+                    originalNick = fresh.nickname;
+                }
+            } catch(e) { console.error(e); }
+        }
 
+        // ── Смена ника ────────────────────────────────
+        const nickInput = document.getElementById('nickInput');
+        nickInput.addEventListener('input', function() {
+            document.getElementById('saveNickBtn').classList.toggle('visible', this.value.trim() !== originalNick);
+        });
+
+        async function saveNickname() {
+            const newNick = nickInput.value.trim();
+            if (!newNick || newNick === originalNick) return;
+            const status = document.getElementById('profileStatus');
+            try {
+                await sbUpdate('users', `id=eq.${user.id}`, { nickname: newNick });
+                const updated = {...user, nickname: newNick};
+                localStorage.setItem('user', JSON.stringify(updated));
+                originalNick = newNick;
+                document.getElementById('saveNickBtn').classList.remove('visible');
+                status.textContent = '✓ Ник сохранён';
+                setTimeout(() => status.textContent = '', 2000);
+            } catch(e) { status.textContent = 'Ошибка сохранения'; }
+        }
+
+        // ── Смена аватара ─────────────────────────────
+        document.getElementById('avatarInput').addEventListener('change', async function() {
+            const file = this.files[0];
+            if (!file) return;
+            const status = document.getElementById('profileStatus');
+            status.textContent = 'Загрузка аватара...';
+            try {
+                const compressed = await compressImage(file, 400);
+                const fileName   = `avatars/${user.id}_${Date.now()}.jpg`;
+                const uploadUrl  = `${CONFIG.supabase.url}/storage/v1/object/photos/${fileName}`;
+                const res = await fetch(uploadUrl, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + CONFIG.supabase.anon, 'apikey': CONFIG.supabase.anon, 'Content-Type': 'image/jpeg', 'x-upsert': 'true' },
+                    body: compressed
+                });
+                if (!res.ok) throw new Error(await res.text());
+                const avatarUrl = `${CONFIG.supabase.url}/storage/v1/object/public/photos/${fileName}`;
+                await sbUpdate('users', `id=eq.${user.id}`, { avatar_url: avatarUrl });
+                localStorage.setItem('user', JSON.stringify({...user, avatar_url: avatarUrl}));
+                document.getElementById('avatarCircle').innerHTML = `<img src="${avatarUrl}" alt="">`;
+                status.textContent = '✓ Аватар обновлён';
+                setTimeout(() => status.textContent = '', 2000);
+            } catch(e) { status.textContent = 'Ошибка загрузки'; console.error(e); }
+        });
+
+        // ── Друзья ────────────────────────────────────
+        async function loadFriends() {
+            const list = document.getElementById('friendsList');
+            try {
+                // Принятые друзья и входящие заявки
+                const friendships = await sbSelect('friends',
+                    `or=(user_id.eq.${user.id},friend_id.eq.${user.id})&select=id,user_id,friend_id,status`
+                );
+
+                if (friendships.length === 0) {
+                    list.innerHTML = '<div class="no-friends">Пока нет друзей</div>';
+                    return;
+                }
+
+                // Получаем ID всех связанных пользователей
+                const ids = [...new Set(friendships.flatMap(f => [f.user_id, f.friend_id]).filter(id => id !== user.id))];
+                const friendUsers = ids.length
+                    ? await sbSelect('users', `id=in.(${ids.join(',')})&select=id,nickname,avatar_url`)
+                    : [];
+
+                list.innerHTML = '';
+                friendships.forEach(f => {
+                    const friendId   = f.user_id === user.id ? f.friend_id : f.user_id;
+                    const friendData = friendUsers.find(u => u.id === friendId);
+                    if (!friendData) return;
+
+                    const isPending  = f.status === 'pending';
+                    const isIncoming = isPending && f.friend_id === user.id;
+                    const avatarHTML = friendData.avatar_url
+                        ? `<img src="${friendData.avatar_url}" alt="">`
+                        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+
+                    const statusText = isPending
+                        ? (isIncoming ? '<span class="friend-pending">принять?</span>' : '<span class="friend-status">ожидание</span>')
+                        : '';
+
+                    const div = document.createElement('a');
+                    div.className = 'friend-row';
+                    div.href = `user-profile.html?id=${friendData.id}`;
+                    div.innerHTML = `
+                        <div class="friend-avatar">${avatarHTML}</div>
+                        <div class="friend-nick">${escHtml(friendData.nickname)}</div>
+                        ${statusText}
+                        ${isIncoming ? `<button onclick="acceptFriend(event,'${f.id}')" style="background:#00969d;border:none;border-radius:20px;padding:4px 12px;font-family:'basis33',monospace;font-size:13px;color:#fff;cursor:pointer;margin-left:4px;">✓</button>` : ''}
+                    `;
+                    list.appendChild(div);
+                });
+            } catch(e) { list.innerHTML = '<div class="no-friends">Ошибка загрузки</div>'; console.error(e); }
+        }
+
+        async function addFriend() {
+            const nick = document.getElementById('friendNickInput').value.trim();
+            if (!nick) return;
+            const status = document.getElementById('profileStatus');
+            try {
+                const found = await sbSelect('users', `nickname=eq.${encodeURIComponent(nick)}&select=id,nickname`);
+                if (!found.length) { status.textContent = 'Пользователь не найден'; setTimeout(()=>status.textContent='',2000); return; }
+                if (found[0].id === user.id) { status.textContent = 'Нельзя добавить себя'; setTimeout(()=>status.textContent='',2000); return; }
+                await sbInsert('friends', { user_id: user.id, friend_id: found[0].id, status: 'pending' });
+                document.getElementById('friendNickInput').value = '';
+                status.textContent = '✓ Заявка отправлена';
+                setTimeout(()=>status.textContent='',2000);
+                loadFriends();
+            } catch(e) { status.textContent = 'Уже в друзьях или ошибка'; setTimeout(()=>status.textContent='',2000); }
+        }
+
+        async function acceptFriend(e, friendshipId) {
+            e.preventDefault(); e.stopPropagation();
+            try {
+                await sbUpdate('friends', `id=eq.${friendshipId}`, { status: 'accepted' });
+                loadFriends();
+            } catch(e) { console.error(e); }
+        }
+
+        function escHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        function logout() {
+            localStorage.removeItem('role');
+            localStorage.removeItem('user');
+            goTo('index.html');
+        }
+
+        document.querySelectorAll('a[href]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
                 if (href && !href.startsWith('#') && !href.startsWith('http') && !href.startsWith('mailto')) {
-                    e.preventDefault();
-                    document.body.style.transition = 'opacity 0.3s ease';
-                    document.body.style.opacity = '0';
-                    setTimeout(() => { window.location.href = href; }, 310);
+                    e.preventDefault(); goTo(href);
                 }
             });
         });
-
-        // ── Попап для зрителей при клике на кнопку создания ─
-        function openKeyPopup() {
-            document.getElementById('keyPopup').classList.add('show');
-            document.getElementById('keyOverlay').classList.add('show');
-        }
-        function closeKeyPopup() {
-            document.getElementById('keyPopup').classList.remove('show');
-            document.getElementById('keyOverlay').classList.remove('show');
-        }
-        // Перехватить клик на create.html если зритель
-        document.addEventListener('DOMContentLoaded', function() {
-            if (localStorage.getItem('role') === 'viewer') {
-                document.querySelectorAll('a.nav-item[href="create.html"]').forEach(function(btn) {
-                    btn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        openKeyPopup();
-                    });
-                });
-            }
-        });
-
-        // Зрителю убираем href у кнопки создания — браузер не сможет перейти
-        (function() {
-            if (localStorage.getItem('role') !== 'viewer') return;
-            var btn = document.querySelector('a.nav-item[href="create.html"]');
-            if (!btn) return;
-            btn.removeAttribute('href');
-            btn.style.cursor = 'pointer';
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                openKeyPopup();
-            }, true); // true = capture phase, срабатывает первым
-        })();
     </script>
 </body>
 </html>

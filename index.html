@@ -138,15 +138,6 @@
         }
 
         /* ── Центральная плашка ───────────────────────────── */
-
-        /* ── Группы кнопок ───────────────────── */
-        .nav-group {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .nav-group-right { justify-content: flex-end; }
         .nav-spacer {
             width: 320px; height: 62px;
             background: #007c85;
@@ -356,8 +347,23 @@
     <div class="top-nav-zone"></div>
 
     <div class="navbar-container">
-        <div class="navbar-inner" style="justify-content:center">
+        <div class="navbar-inner">
+            <div class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></svg>
+            </div>
+
             <div class="nav-spacer"></div>
+
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+            </div>
+
+            <a href="profile.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            </a>
         </div>
     </div>
 
@@ -371,73 +377,71 @@
         <button class="spectator-btn">Я зритель</button>
     </div>
 
-    <script>
-        // ── Плавное появление страницы ─────────────────────
+    <script src="config.js"></script>
+<script>
         window.addEventListener('load', () => {
             requestAnimationFrame(() => document.body.classList.add('loaded'));
         });
 
-        // ── Плавный уход со страницы при переходе ─────────
         document.querySelectorAll('a[href]').forEach(link => {
-            link.addEventListener('click', function (e) {
+            link.addEventListener('click', function(e) {
                 const href = this.getAttribute('href');
                 if (href && !href.startsWith('#') && !href.startsWith('http') && !href.startsWith('mailto')) {
                     e.preventDefault();
-                    document.body.style.transition = 'opacity 0.3s ease';
-                    document.body.style.opacity = '0';
-                    setTimeout(() => { window.location.href = href; }, 310);
+                    goTo(href);
                 }
             });
         });
 
-        // ── Белый список ключей ────────────────────────────
-        const VALID_KEYS = ['WAJH-ZX6C-PAGS'];
-
-        // ── Плавный переход на страницу ────────────────────
-        function goTo(page) {
-            document.body.style.transition = 'opacity 0.3s ease';
-            document.body.style.opacity = '0';
-            setTimeout(() => { window.location.href = page; }, 310);
-        }
-
         // ── Кнопка «Я зритель» ────────────────────────────
-        document.querySelector('.spectator-btn').addEventListener('click', function () {
+        document.querySelector('.spectator-btn').addEventListener('click', function() {
             localStorage.setItem('role', 'viewer');
+            localStorage.removeItem('user');
             goTo('news.html');
         });
 
-        // ── Ввод ключа доступа ────────────────────────────
-        function submitKey() {
+        // ── Ввод ключа доступа (проверка через БД) ────────
+        async function submitKey() {
             const val = document.querySelector('.key-input').value.trim().toUpperCase();
-            if (VALID_KEYS.includes(val)) {
-                localStorage.setItem('role', 'member');
-                goTo('news.html');
-            } else {
-                const input = document.querySelector('.key-input');
-                input.style.transition = 'box-shadow 0.15s ease, color 0.15s ease';
-                input.style.boxShadow = '0 0 0 3px rgba(220,60,60,0.45), inset 0 4px 8px rgba(0,0,0,0.2)';
-                input.style.color = '#c0392b';
-                setTimeout(() => {
-                    input.style.boxShadow = '';
-                    input.style.color = '#00878f';
-                }, 900);
+            if (!val) return;
+
+            const input = document.querySelector('.key-input');
+            input.disabled = true;
+            input.style.opacity = '0.6';
+
+            try {
+                const users = await sbSelect('users', 'access_key=eq.' + encodeURIComponent(val) + '&select=id,nickname,avatar_url');
+                if (users.length > 0) {
+                    const user = users[0];
+                    localStorage.setItem('role', 'member');
+                    localStorage.setItem('user', JSON.stringify(user));
+                    goTo('news.html');
+                } else {
+                    // Неверный ключ
+                    input.disabled = false;
+                    input.style.opacity = '1';
+                    input.style.transition = 'box-shadow 0.15s ease, color 0.15s ease';
+                    input.style.boxShadow = '0 0 0 3px rgba(220,60,60,0.45), inset 0 4px 8px rgba(0,0,0,0.2)';
+                    input.style.color = '#c0392b';
+                    input.value = '';
+                    input.placeholder = 'НЕВЕРНЫЙ КЛЮЧ';
+                    setTimeout(() => {
+                        input.style.boxShadow = '';
+                        input.style.color = '#00878f';
+                        input.placeholder = 'ВВЕДИТЕ КЛЮЧ';
+                    }, 1500);
+                }
+            } catch(e) {
+                input.disabled = false;
+                input.style.opacity = '1';
+                console.error(e);
             }
         }
 
         document.querySelector('.arrow-btn').addEventListener('click', submitKey);
-        document.querySelector('.key-input').addEventListener('keydown', function (e) {
+        document.querySelector('.key-input').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') submitKey();
         });
-
-        // ── Переключение активной кнопки ──────────────────
-        const navItems = document.querySelectorAll('.nav-item');
-        navItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                if (item.tagName === 'A' && item.getAttribute('href') !== '#') return;
-                navItems.forEach(el => el.classList.remove('active'));
-                item.classList.add('active');
-            });
-        });
-    </script>
+</script>
 </body>
 </html>

@@ -4,431 +4,243 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Последние истории</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
-        @font-face {
-            font-family: 'basis33';
-            src: url('basis33.ttf') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        /* ── Плавный вход / выход страницы ─────────────────── */
-        body {
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'basis33', sans-serif;
-            overflow: hidden;
-            background-color: #0f141c;
-            position: relative;
-
-            opacity: 0;
-            transition: opacity 0.4s ease;
-        }
-
-        body.loaded { opacity: 1; }
-
-        /* ── Задний фон ────────────────────────────────────── */
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: url('f.png') no-repeat center center fixed;
-            background-size: cover;
-            filter: blur(10px);
-            transform: scale(1.05);
-            z-index: -1;
-        }
-
-        /* ── Зона триггера для панели ──────────────────────── */
-        .top-nav-zone {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 50px;
-            z-index: 9999;
-        }
-
-        /* ── Стеклянная подложка панели ───────────────────── */
-        .navbar-container {
-            position: fixed;
-            top: -160px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 940px;
-            padding: 20px 35px;
-            border-radius: 0 0 60px 60px;
-
-            background: linear-gradient(
-                160deg,
-                rgba(255, 255, 255, 0.14) 0%,
-                rgba(255, 255, 255, 0.05) 45%,
-                rgba(255, 255, 255, 0.01) 100%
-            );
-            backdrop-filter: blur(14px) saturate(1.5);
-            -webkit-backdrop-filter: blur(14px) saturate(1.5);
-
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            border-top: none;
-            box-shadow:
-                0 24px 50px rgba(0, 0, 0, 0.38),
-                inset 0  1px 0 rgba(255, 255, 255, 0.22),
-                inset 1px 0 0 rgba(255, 255, 255, 0.07),
-                inset -1px 0 0 rgba(255, 255, 255, 0.07);
-
-            transition: top 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.12);
-            z-index: 10000;
-        }
-
-        .top-nav-zone:hover + .navbar-container,
-        .navbar-container:hover {
-            top: 0;
-        }
-
-        /* ── Внутреннее бирюзовое основание ───────────────── */
-        .navbar-inner {
-            background: #00969d;
-            border-radius: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 25px;
-            width: 100%;
-            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.3);
-        }
-
-        /* ── Кнопки меню ──────────────────────────────────── */
-        .nav-item {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 62px; height: 62px;
-            border-radius: 50%;
-            cursor: pointer;
-            color: rgba(255, 255, 255, 0.75);
-            transition:
-                background   0.28s ease,
-                border-color 0.28s ease,
-                box-shadow   0.28s ease,
-                transform    0.3s  cubic-bezier(0.34, 1.5, 0.64, 1);
-            border: 1px solid transparent;
-            background: transparent;
-            text-decoration: none;
-        }
-
-        .nav-item svg {
-            width: 28px; height: 28px;
-            display: block;
-            transition: filter 0.28s ease, color 0.28s ease;
-        }
-
-        /* ── Центральная плашка ───────────────────────────── */
-        .nav-spacer {
-            flex-shrink: 0;
-            width: 320px;
-            height: 62px;
-            background: #007c85;
-            border-radius: 35px;
-            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.25);
-        }
-
-        /* ── Стеклянный эффект кнопок (hover + active) ────── */
-        .nav-item:hover,
-        .nav-item.active {
-            background: linear-gradient(
-                145deg,
-                rgba(255, 255, 255, 0.30) 0%,
-                rgba(255, 255, 255, 0.08) 100%
-            );
-            backdrop-filter: blur(10px) saturate(1.6);
-            -webkit-backdrop-filter: blur(10px) saturate(1.6);
-            border: 1px solid rgba(255, 255, 255, 0.38);
-            box-shadow:
-                inset 0  1px 0 rgba(255, 255, 255, 0.40),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.10),
-                0 6px 16px rgba(0, 0, 0, 0.20);
-            transform: scale(1.06);
-            color: #ffffff;
-        }
-
-        .nav-item:hover svg,
-        .nav-item.active svg {
-            color: #ffffff;
-            filter: drop-shadow(0 0 5px #ffffff) drop-shadow(0 0 12px rgba(255, 255, 255, 0.9));
-        }
-
-        /* ── Карточка ленты (увеличена по высоте) ─────────── */
-        .feed-card {
-            position: relative;
-            z-index: 10;
-
-            background: linear-gradient(
-                145deg,
-                rgba(255, 255, 255, 0.10) 0%,
-                rgba(255, 255, 255, 0.04) 50%,
-                rgba(255, 255, 255, 0.01) 100%
-            );
-            backdrop-filter: blur(14px) saturate(1.5);
-            -webkit-backdrop-filter: blur(14px) saturate(1.5);
-
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            border-radius: 80px;
-            padding: 45px 70px;
-            box-shadow:
-                0 32px 70px rgba(0, 0, 0, 0.38),
-                0 0 0 1px rgba(255, 255, 255, 0.06),
-                inset 0  1px 0 rgba(255, 255, 255, 0.24),
-                inset 0 -2px 0 rgba(0, 0, 0, 0.14);
-
-            display: flex;
-            flex-direction: column;
-            width: 1180px;
-            max-width: 95%;
-
-            /* Высота увеличена, чтобы видеть больше постов сразу */
-            height: 93vh;
-            max-height: 940px;
-
-            /* Лёгкое появление карточки */
-            animation: cardIn 0.5s cubic-bezier(0.34, 1.2, 0.64, 1) both;
-            animation-delay: 0.15s;
-        }
-
-        @keyframes cardIn {
-            from { opacity: 0; transform: translateY(18px) scale(0.97); }
-            to   { opacity: 1; transform: translateY(0)    scale(1);    }
-        }
-
-        /* ── Заголовок ─────────────────────────────────────── */
-        .feed-title {
-            font-family: 'basis33', sans-serif;
-            font-size: 32px;
-            color: #ffffff;
-            letter-spacing: 1px;
-            font-weight: normal;
-            text-transform: uppercase;
-            margin-bottom: 25px;
-        }
-
-        /* ── Скролл-контейнер ─────────────────────────────── */
-        .feed-container {
-            display: flex;
-            flex-direction: column;
-            gap: 35px;
-            overflow-y: auto;
-            width: 100%;
-            height: 100%;
-            padding-right: 15px;
-            scroll-behavior: smooth;
-        }
-
-        .feed-container::-webkit-scrollbar {
-            width: 6px;
-        }
-        .feed-container::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 10px;
-        }
-        .feed-container::-webkit-scrollbar-thumb {
-            background: rgba(0, 150, 157, 0.4);
-            border-radius: 10px;
-            transition: background 0.25s ease;
-        }
-        .feed-container::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 150, 157, 0.65);
-        }
-
-        /* ── Пост ─────────────────────────────────────────── */
-        .post-item {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-        }
-
-        .post-user {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 6px;
-        }
-
-        .post-avatar {
-            width: 28px; height: 28px;
-            background: #00969d;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #ffffff;
-        }
-
-        .post-avatar svg {
-            width: 16px; height: 16px;
-        }
-
-        .post-username {
-            font-family: 'basis33', sans-serif;
-            font-size: 32px;
-            font-weight: normal;
-            color: #00a4ad;
-        }
-
-        /* ── Текст поста ──────────────────────────────────── */
-        .post-text-row {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            font-family: 'basis33', sans-serif;
-            font-size: 24px;
-            color: #ffffff;
-            line-height: 1.3;
-            margin-bottom: 20px;
-        }
-
-        .post-date-prefix {
-            white-space: nowrap;
-            color: #ffffff;
-            user-select: none;
-        }
-
-        .post-actual-text {
-            flex: 1;
-            word-wrap: break-word;
-        }
-
-        /* ── Медиа-группа ─────────────────────────────────── */
-        .post-media-group {
-            display: flex;
-            justify-content: center;
-            gap: 24px;
-            width: 100%;
-            margin-bottom: 10px;
-        }
-
-        .media-box {
-            background: #ffffff;
-            color: #000000;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 52px;
-            font-weight: bold;
-
-            width: 340px;
-            height: 190px;
-            border-radius: 36px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-            user-select: none;
-            cursor: pointer;
-
-            transition:
-                transform  0.25s cubic-bezier(0.34, 1.5, 0.64, 1),
-                box-shadow 0.25s ease;
-        }
-
-        .media-box:hover {
-            transform: scale(1.04) translateY(-2px);
-            box-shadow:
-                0 10px 22px rgba(0, 0, 0, 0.22),
-                0 0 18px rgba(0, 150, 157, 0.35);
-        }
-
-        /* ── Попап «нужен ключ» ────────────────────────────── */
-        .key-popup {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.85);
-            z-index: 99999;
-            background: linear-gradient(145deg, rgba(255,255,255,0.13), rgba(255,255,255,0.05));
-            backdrop-filter: blur(20px) saturate(1.6);
-            -webkit-backdrop-filter: blur(20px) saturate(1.6);
-            border: 1px solid rgba(255,255,255,0.22);
-            border-radius: 48px;
-            padding: 42px 60px;
-            text-align: center;
-            box-shadow: 0 24px 60px rgba(0,0,0,0.45),
-                        inset 0 1px 0 rgba(255,255,255,0.28);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.34,1.3,0.64,1);
-        }
-        .key-popup.show {
-            opacity: 1;
-            pointer-events: all;
-            transform: translate(-50%, -50%) scale(1);
-        }
-        .key-popup-icon {
-            font-size: 48px;
-            margin-bottom: 18px;
-            display: block;
-            filter: drop-shadow(0 0 12px rgba(0,188,212,0.6));
-        }
-        .key-popup-title {
-            font-family: 'basis33', monospace;
-            font-size: 28px;
-            color: #ffffff;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 12px;
-        }
-        .key-popup-text {
-            font-family: 'basis33', monospace;
-            font-size: 20px;
-            color: rgba(255,255,255,0.7);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            line-height: 1.5;
-            margin-bottom: 30px;
-        }
-        .key-popup-close {
-            background: #00969d;
-            border: none;
-            border-radius: 50px;
-            padding: 12px 44px;
-            font-family: 'basis33', monospace;
-            font-size: 20px;
-            letter-spacing: 2px;
-            color: #ffffff;
-            text-transform: uppercase;
-            cursor: pointer;
-            box-shadow: 0 6px 20px rgba(0,150,157,0.45);
-            transition: background 0.25s ease, transform 0.25s cubic-bezier(0.34,1.5,0.64,1);
-        }
-        .key-popup-close:hover {
-            background: #00b0b8;
-            transform: translateY(-2px);
-        }
-        .key-popup-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 99998;
-            display: none;
-        }
-        .key-popup-overlay.show { display: block; }
-    </style>
     <script>
         (function(){
             var r = localStorage.getItem('role');
-            if (!r) { window.location.replace('index.html'); return; }
+            if (!r) { window.location.replace('index.html'); }
         })();
     </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @font-face { font-family:'basis33'; src:url('basis33.ttf') format('truetype'); }
+        * { box-sizing:border-box; margin:0; padding:0; }
+
+        body {
+            height:100vh; display:flex; justify-content:center; align-items:center;
+            font-family:'basis33',sans-serif; overflow:hidden;
+            background-color:#0f141c; position:relative;
+            opacity:0; transition:opacity 0.4s ease;
+        }
+        body.loaded { opacity:1; }
+        body::before {
+            content:""; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:url('f.png') no-repeat center center fixed;
+            background-size:cover; filter:blur(10px); transform:scale(1.05); z-index:-1;
+        }
+
+        /* ── Навигация ───────────────────────────────── */
+        .top-nav-zone { position:fixed; top:0; left:0; width:100%; height:50px; z-index:9999; }
+        .navbar-container {
+            position:fixed; top:-160px; left:50%; transform:translateX(-50%);
+            width:940px; padding:20px 35px; border-radius:0 0 60px 60px;
+            background:linear-gradient(160deg,rgba(255,255,255,0.14) 0%,rgba(255,255,255,0.05) 45%,rgba(255,255,255,0.01) 100%);
+            backdrop-filter:blur(14px) saturate(1.5); -webkit-backdrop-filter:blur(14px) saturate(1.5);
+            border:1px solid rgba(255,255,255,0.18); border-top:none;
+            box-shadow:0 24px 50px rgba(0,0,0,0.38),inset 0 1px 0 rgba(255,255,255,0.22);
+            transition:top 0.45s cubic-bezier(0.175,0.885,0.32,1.12); z-index:10000;
+        }
+        .top-nav-zone:hover + .navbar-container, .navbar-container:hover { top:0; }
+        .navbar-inner {
+            background:#00969d; border-radius:48px; display:flex; align-items:center;
+            justify-content:space-between; padding:10px 25px; width:100%;
+            box-shadow:inset 0 3px 6px rgba(0,0,0,0.3);
+        }
+        .nav-item {
+            display:flex; align-items:center; justify-content:center;
+            width:62px; height:62px; border-radius:50%; cursor:pointer;
+            color:rgba(255,255,255,0.75);
+            transition:background 0.28s ease,border-color 0.28s ease,box-shadow 0.28s ease,transform 0.3s cubic-bezier(0.34,1.5,0.64,1);
+            border:1px solid transparent; background:transparent; text-decoration:none;
+        }
+        .nav-item svg { width:28px; height:28px; display:block; transition:filter 0.28s ease,color 0.28s ease; }
+        .nav-spacer { flex-shrink:0; width:320px; height:62px; background:#007c85; border-radius:35px; box-shadow:inset 0 3px 6px rgba(0,0,0,0.25); }
+        .nav-item:hover,.nav-item.active {
+            background:linear-gradient(145deg,rgba(255,255,255,0.30),rgba(255,255,255,0.08));
+            backdrop-filter:blur(10px) saturate(1.6); -webkit-backdrop-filter:blur(10px) saturate(1.6);
+            border:1px solid rgba(255,255,255,0.38);
+            box-shadow:inset 0 1px 0 rgba(255,255,255,0.40),inset 0 -1px 0 rgba(0,0,0,0.10),0 6px 16px rgba(0,0,0,0.20);
+            transform:scale(1.06); color:#ffffff;
+        }
+        .nav-item:hover svg,.nav-item.active svg {
+            color:#ffffff; filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 12px rgba(255,255,255,0.9));
+        }
+
+        /* ── Лента ───────────────────────────────────── */
+        .feed-card {
+            position:relative; z-index:10;
+            background:linear-gradient(145deg,rgba(255,255,255,0.10) 0%,rgba(255,255,255,0.04) 50%,rgba(255,255,255,0.01) 100%);
+            backdrop-filter:blur(14px) saturate(1.5); -webkit-backdrop-filter:blur(14px) saturate(1.5);
+            border:1px solid rgba(255,255,255,0.18); border-radius:80px; padding:45px 70px;
+            box-shadow:0 32px 70px rgba(0,0,0,0.38),0 0 0 1px rgba(255,255,255,0.06),inset 0 1px 0 rgba(255,255,255,0.24),inset 0 -2px 0 rgba(0,0,0,0.14);
+            display:flex; flex-direction:column; width:1180px; max-width:95%;
+            height:93vh; max-height:940px;
+            animation:cardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) both; animation-delay:0.15s;
+        }
+        @keyframes cardIn { from{opacity:0;transform:translateY(18px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+        /* ── Шапка ленты ─────────────────────────────── */
+        .feed-header {
+            display:flex; align-items:center; justify-content:space-between;
+            margin-bottom:25px; flex-shrink:0;
+        }
+        .feed-title { font-size:32px; color:#ffffff; letter-spacing:1px; text-transform:uppercase; font-weight:normal; }
+
+        /* ── Сортировка ──────────────────────────────── */
+        .sort-controls { display:flex; align-items:center; gap:10px; }
+        .sort-btn {
+            background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.22);
+            border-radius:30px; padding:8px 20px; cursor:pointer;
+            font-family:'basis33',monospace; font-size:16px; color:rgba(255,255,255,0.75);
+            letter-spacing:1px; text-transform:uppercase;
+            transition:all 0.25s ease;
+        }
+        .sort-btn.active { background:rgba(0,150,157,0.35); border-color:#00969d; color:#ffffff; box-shadow:0 0 14px rgba(0,150,157,0.4); }
+        .sort-btn:hover { background:rgba(255,255,255,0.18); color:#ffffff; }
+        .sort-dir-btn {
+            background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.22);
+            border-radius:50%; width:38px; height:38px; cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+            color:rgba(255,255,255,0.75); transition:all 0.25s ease;
+        }
+        .sort-dir-btn:hover { background:rgba(255,255,255,0.22); color:#fff; }
+        .sort-dir-btn svg { width:18px; height:18px; transition:transform 0.3s ease; }
+        .sort-dir-btn.asc svg { transform:rotate(180deg); }
+
+        /* ── Скролл ──────────────────────────────────── */
+        .feed-container { display:flex; flex-direction:column; gap:35px; overflow-y:auto; width:100%; height:100%; padding-right:15px; scroll-behavior:smooth; }
+        .feed-container::-webkit-scrollbar { width:6px; }
+        .feed-container::-webkit-scrollbar-track { background:rgba(255,255,255,0.02); border-radius:10px; }
+        .feed-container::-webkit-scrollbar-thumb { background:rgba(0,150,157,0.4); border-radius:10px; }
+        .feed-container::-webkit-scrollbar-thumb:hover { background:rgba(0,150,157,0.65); }
+
+        /* ── Загрузка ────────────────────────────────── */
+        .loading { text-align:center; padding:60px 0; font-family:'basis33',monospace; font-size:22px; color:rgba(255,255,255,0.5); letter-spacing:2px; }
+        .empty { text-align:center; padding:60px 0; font-family:'basis33',monospace; font-size:22px; color:rgba(255,255,255,0.4); letter-spacing:1px; text-transform:uppercase; }
+
+        /* ── Пост ────────────────────────────────────── */
+        .post-item { display:flex; flex-direction:column; width:100%; }
+        .post-user { display:flex; align-items:center; gap:12px; margin-bottom:6px; cursor:pointer; }
+        .post-avatar {
+            width:36px; height:36px; background:#00969d; border-radius:50%;
+            display:flex; align-items:center; justify-content:center; color:#fff;
+            overflow:hidden; flex-shrink:0;
+        }
+        .post-avatar img { width:100%; height:100%; object-fit:cover; }
+        .post-avatar svg { width:20px; height:20px; }
+        .post-username { font-size:32px; font-weight:normal; color:#00a4ad; transition:color 0.2s; }
+        .post-user:hover .post-username { color:#00d4e0; }
+
+        .post-text-row { display:flex; align-items:flex-start; gap:8px; font-size:24px; color:#ffffff; line-height:1.3; margin-bottom:20px; }
+        .post-date-prefix { white-space:nowrap; color:#ffffff; user-select:none; }
+        .post-actual-text { flex:1; word-wrap:break-word; }
+
+        /* ── Медиа ───────────────────────────────────── */
+        .post-media-group { display:flex; justify-content:center; gap:24px; width:100%; margin-bottom:14px; flex-wrap:wrap; }
+        .media-box {
+            background:#ffffff; color:#000000; font-family:'Press Start 2P',monospace;
+            font-size:44px; font-weight:bold; width:280px; height:140px; border-radius:32px;
+            display:flex; align-items:center; justify-content:center;
+            box-shadow:0 4px 14px rgba(0,0,0,0.15); cursor:pointer; position:relative; overflow:hidden;
+            transition:transform 0.25s cubic-bezier(0.34,1.5,0.64,1),box-shadow 0.25s ease;
+        }
+        .media-box:hover { transform:scale(1.04) translateY(-2px); box-shadow:0 10px 28px rgba(0,0,0,0.22),0 0 20px rgba(0,150,157,0.30); }
+        .media-box img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:32px; }
+        .media-box iframe { position:absolute; inset:0; width:100%; height:100%; border:none; border-radius:32px; }
+
+        /* ── Лайки и комментарии ─────────────────────── */
+        .post-actions { display:flex; align-items:center; gap:16px; margin-top:4px; }
+        .action-btn {
+            display:flex; align-items:center; gap:7px;
+            background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+            border-radius:30px; padding:7px 16px; cursor:pointer;
+            font-family:'basis33',monospace; font-size:18px; color:rgba(255,255,255,0.75);
+            transition:all 0.22s ease; user-select:none;
+        }
+        .action-btn svg { width:18px; height:18px; flex-shrink:0; }
+        .action-btn:hover { background:rgba(255,255,255,0.16); color:#fff; }
+        .action-btn.liked { background:rgba(0,200,100,0.22); border-color:rgba(0,200,100,0.5); color:#00e676; }
+        .action-btn.disliked { background:rgba(220,60,60,0.22); border-color:rgba(220,60,60,0.5); color:#ff5252; }
+        .post-time { margin-left:auto; font-family:'basis33',monospace; font-size:15px; color:rgba(255,255,255,0.35); }
+
+        /* ── Разделитель постов ───────────────────────── */
+        .post-divider { width:100%; height:1px; background:rgba(255,255,255,0.08); margin-top:8px; }
+
+        /* ── Попап «нужен ключ» ──────────────────────── */
+        .key-popup {
+            position:fixed; top:50%; left:50%;
+            transform:translate(-50%,-50%) scale(0.85); z-index:99999;
+            background:linear-gradient(145deg,rgba(255,255,255,0.13),rgba(255,255,255,0.05));
+            backdrop-filter:blur(20px) saturate(1.6); -webkit-backdrop-filter:blur(20px) saturate(1.6);
+            border:1px solid rgba(255,255,255,0.22); border-radius:48px; padding:42px 60px;
+            text-align:center; box-shadow:0 24px 60px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.28);
+            opacity:0; pointer-events:none; transition:opacity 0.3s ease,transform 0.35s cubic-bezier(0.34,1.3,0.64,1);
+        }
+        .key-popup.show { opacity:1; pointer-events:all; transform:translate(-50%,-50%) scale(1); }
+        .key-popup-icon { font-size:48px; margin-bottom:18px; display:block; }
+        .key-popup-title { font-family:'basis33',monospace; font-size:28px; color:#fff; letter-spacing:2px; text-transform:uppercase; margin-bottom:12px; }
+        .key-popup-text { font-family:'basis33',monospace; font-size:20px; color:rgba(255,255,255,0.7); letter-spacing:1px; text-transform:uppercase; line-height:1.5; margin-bottom:30px; }
+        .key-popup-close {
+            background:#00969d; border:none; border-radius:50px; padding:12px 44px;
+            font-family:'basis33',monospace; font-size:20px; letter-spacing:2px; color:#fff;
+            text-transform:uppercase; cursor:pointer; box-shadow:0 6px 20px rgba(0,150,157,0.45);
+            transition:background 0.25s ease,transform 0.25s cubic-bezier(0.34,1.5,0.64,1);
+        }
+        .key-popup-close:hover { background:#00b0b8; transform:translateY(-2px); }
+        .key-popup-overlay { position:fixed; inset:0; z-index:99998; display:none; }
+        .key-popup-overlay.show { display:block; }
+
+        /* ── Модальное окно комментариев ─────────────── */
+        .modal-overlay {
+            position:fixed; inset:0; z-index:88888; background:rgba(0,0,0,0.5);
+            display:none; align-items:center; justify-content:center;
+        }
+        .modal-overlay.show { display:flex; }
+        .comments-modal {
+            background:linear-gradient(145deg,rgba(20,30,45,0.97),rgba(15,20,30,0.99));
+            backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+            border:1px solid rgba(255,255,255,0.15); border-radius:48px;
+            width:min(680px,92%); max-height:80vh; display:flex; flex-direction:column;
+            box-shadow:0 24px 60px rgba(0,0,0,0.6);
+            animation:cardIn 0.35s cubic-bezier(0.34,1.2,0.64,1) both;
+        }
+        .modal-header {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:28px 36px 20px; border-bottom:1px solid rgba(255,255,255,0.08); flex-shrink:0;
+        }
+        .modal-title { font-family:'basis33',monospace; font-size:24px; color:#fff; letter-spacing:2px; text-transform:uppercase; }
+        .modal-close { background:none; border:none; cursor:pointer; color:rgba(255,255,255,0.5); padding:4px; transition:color 0.2s; }
+        .modal-close:hover { color:#fff; }
+        .modal-close svg { width:24px; height:24px; }
+
+        .comments-list { flex:1; overflow-y:auto; padding:20px 36px; display:flex; flex-direction:column; gap:16px; }
+        .comments-list::-webkit-scrollbar { width:4px; }
+        .comments-list::-webkit-scrollbar-thumb { background:rgba(0,150,157,0.4); border-radius:4px; }
+        .comment-item { display:flex; gap:12px; }
+        .comment-avatar { width:32px; height:32px; background:#00969d; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; overflow:hidden; }
+        .comment-avatar img { width:100%; height:100%; object-fit:cover; }
+        .comment-avatar svg { width:16px; height:16px; }
+        .comment-body { flex:1; }
+        .comment-nick { font-family:'basis33',monospace; font-size:18px; color:#00a4ad; margin-bottom:4px; }
+        .comment-text { font-family:'basis33',monospace; font-size:16px; color:rgba(255,255,255,0.85); line-height:1.4; word-wrap:break-word; }
+        .comment-time { font-size:13px; color:rgba(255,255,255,0.3); margin-top:3px; }
+        .no-comments { text-align:center; padding:40px 0; font-family:'basis33',monospace; font-size:18px; color:rgba(255,255,255,0.3); text-transform:uppercase; }
+
+        .modal-input-area { padding:16px 36px 28px; flex-shrink:0; border-top:1px solid rgba(255,255,255,0.08); }
+        .comment-input-row { display:flex; gap:10px; align-items:center; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-radius:40px; padding:8px 8px 8px 20px; }
+        .comment-input { flex:1; background:none; border:none; outline:none; font-family:'basis33',monospace; font-size:17px; color:#fff; caret-color:#00969d; }
+        .comment-input::placeholder { color:rgba(255,255,255,0.3); }
+        .comment-send {
+            background:#00969d; border:none; border-radius:50%; width:42px; height:42px;
+            display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fff; flex-shrink:0;
+            transition:background 0.22s ease,transform 0.22s cubic-bezier(0.34,1.5,0.64,1);
+        }
+        .comment-send:hover { background:#00b0b8; transform:scale(1.08); }
+        .comment-send svg { width:18px; height:18px; }
+        .viewer-comment-note { text-align:center; padding:10px 0 0; font-family:'basis33',monospace; font-size:14px; color:rgba(255,255,255,0.35); letter-spacing:1px; text-transform:uppercase; }
+    </style>
 </head>
 <body>
 
-    
-    <!-- Попап: нужен ключ -->
     <div class="key-popup-overlay" id="keyOverlay" onclick="closeKeyPopup()"></div>
     <div class="key-popup" id="keyPopup">
         <span class="key-popup-icon">🔑</span>
@@ -437,132 +249,328 @@
         <button class="key-popup-close" onclick="closeKeyPopup()">Понятно</button>
     </div>
 
-    <div class="top-nav-zone"></div>
+    <div class="modal-overlay" id="commentsModal">
+        <div class="comments-modal">
+            <div class="modal-header">
+                <div class="modal-title">Комментарии</div>
+                <button class="modal-close" onclick="closeComments()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="comments-list" id="commentsList"></div>
+            <div class="modal-input-area" id="commentInputArea">
+                <div class="comment-input-row">
+                    <input class="comment-input" id="commentInput" placeholder="Написать комментарий..." maxlength="300">
+                    <button class="comment-send" onclick="sendComment()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <!-- НАВИГАЦИОННАЯ ПАНЕЛЬ -->
+    <div class="top-nav-zone"></div>
     <div class="navbar-container">
         <div class="navbar-inner">
-            <a href="search.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></a>
-            <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></svg></div>
+            <a href="search.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></a>
+            <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
             <div class="nav-spacer"></div>
-            <a href="create.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg></a>
-            <a href="profile.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></a>
+            <a href="create.html" class="nav-item" id="createBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></a>
+            <a href="profile.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></a>
         </div>
     </div>
 
-    <!-- ОСНОВНАЯ КАРТОЧКА ЛЕНТЫ -->
     <div class="feed-card">
-        <h2 class="feed-title">ПОСЛЕДНИЕ ИСТОРИИ</h2>
-
-        <div class="feed-container">
-
-            <!-- ПОСТ 1 -->
-            <div class="post-item">
-                <div class="post-user">
-                    <div class="post-avatar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                    </div>
-                    <div class="post-username">Ник</div>
-                </div>
-
-                <div class="post-text-row">
-                    <span class="post-date-prefix">25.09.26 |</span>
-                    <span class="post-actual-text">Текст Текст Текст Текст Текст Текст Текст Текст Текст Текст Текст Текст.</span>
-                </div>
-
-                <div class="post-media-group">
-                    <div class="media-box">ФОТО</div>
-                    <div class="media-box">ВИДЕО</div>
-                </div>
+        <div class="feed-header">
+            <h2 class="feed-title">Последние истории</h2>
+            <div class="sort-controls">
+                <button class="sort-btn active" id="sortDate" onclick="setSort('date')">Дата</button>
+                <button class="sort-btn" id="sortLikes" onclick="setSort('likes')">Популярность</button>
+                <button class="sort-dir-btn" id="sortDirBtn" onclick="toggleDir()" title="Направление сортировки">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                </button>
             </div>
-
-            <!-- ПОСТ 2 -->
-            <div class="post-item" style="margin-top: 20px;">
-                <div class="post-user">
-                    <div class="post-avatar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                    </div>
-                    <div class="post-username">Ник</div>
-                </div>
-
-                <div class="post-text-row">
-                    <span class="post-date-prefix">26.09.26 |</span>
-                    <span class="post-actual-text">Текст Текст Текст Текст Текст Текст Текст Текст Текст Текст Текст Текст.</span>
-                </div>
-
-                <div class="post-media-group">
-                    <div class="media-box">ФОТО</div>
-                    <div class="media-box">ВИДЕО</div>
-                </div>
-            </div>
-
+        </div>
+        <div class="feed-container" id="feedContainer">
+            <div class="loading">Загрузка...</div>
         </div>
     </div>
 
+    <script src="config.js"></script>
     <script>
-        // ── Плавное появление страницы ─────────────────────
-        window.addEventListener('load', () => {
-            requestAnimationFrame(() => document.body.classList.add('loaded'));
-        });
+        const role    = localStorage.getItem('role');
+        const user    = getCurrentUser();
+        let sortBy    = 'date';   // 'date' | 'likes'
+        let sortDir   = 'desc';   // 'desc' | 'asc'
+        let allPosts  = [];
+        let currentPostId = null;
 
-        // ── Плавный уход со страницы при переходе ─────────
+        // ── Попап для зрителей ───────────────────────
+        function openKeyPopup()  { document.getElementById('keyPopup').classList.add('show'); document.getElementById('keyOverlay').classList.add('show'); }
+        function closeKeyPopup() { document.getElementById('keyPopup').classList.remove('show'); document.getElementById('keyOverlay').classList.remove('show'); }
+
+        // ── Навигация ─────────────────────────────────
         document.querySelectorAll('a[href]').forEach(link => {
-            link.addEventListener('click', function (e) {
+            link.addEventListener('click', function(e) {
                 const href = this.getAttribute('href');
-
-                if (href && !href.startsWith('#') && !href.startsWith('http') && !href.startsWith('mailto')) {
-                    e.preventDefault();
-                    document.body.style.transition = 'opacity 0.3s ease';
-                    document.body.style.opacity = '0';
-                    setTimeout(() => { window.location.href = href; }, 310);
+                if (!href) return;
+                if (href === 'create.html' && role === 'viewer') { e.preventDefault(); openKeyPopup(); return; }
+                if (!href.startsWith('#') && !href.startsWith('http') && !href.startsWith('mailto')) {
+                    e.preventDefault(); goTo(href);
                 }
             });
         });
 
-        // ── Переключение активной кнопки ──────────────────
-        const navItems = document.querySelectorAll('.nav-item');
-        navItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                if (item.tagName === 'A' && item.getAttribute('href') !== '#') return;
-                navItems.forEach(el => el.classList.remove('active'));
-                item.classList.add('active');
-            });
-        });
+        // ── Загрузка постов ───────────────────────────
+        async function loadPosts() {
+            const container = document.getElementById('feedContainer');
+            container.innerHTML = '<div class="loading">Загрузка...</div>';
+            try {
+                // Загружаем посты
+                const posts = await sbSelect('posts', 'select=id,author_id,author_nick,author_avatar,date,text,video_url,created_at');
 
-        // ── Попап для зрителей при клике на кнопку создания ─
-        function openKeyPopup() {
-            document.getElementById('keyPopup').classList.add('show');
-            document.getElementById('keyOverlay').classList.add('show');
-        }
-        function closeKeyPopup() {
-            document.getElementById('keyPopup').classList.remove('show');
-            document.getElementById('keyOverlay').classList.remove('show');
-        }
-        // Перехватить клик на create.html если зритель
-        document.addEventListener('DOMContentLoaded', function() {
-            if (localStorage.getItem('role') === 'viewer') {
-                document.querySelectorAll('a.nav-item[href="create.html"]').forEach(function(btn) {
-                    btn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        openKeyPopup();
-                    });
+                // Загружаем лайки и фото одним запросом
+                const [likes, photos] = await Promise.all([
+                    sbSelect('likes', 'select=post_id,user_id,type'),
+                    sbSelect('photos', 'select=post_id,url')
+                ]);
+
+                // Считаем лайки для каждого поста
+                allPosts = posts.map(p => {
+                    const postLikes    = likes.filter(l => l.post_id === p.id && l.type === 'like').length;
+                    const postDislikes = likes.filter(l => l.post_id === p.id && l.type === 'dislike').length;
+                    const myLike       = user ? likes.find(l => l.post_id === p.id && l.user_id === user.id) : null;
+                    const postPhotos   = photos.filter(ph => ph.post_id === p.id).map(ph => ph.url);
+                    return { ...p, likes: postLikes, dislikes: postDislikes, myLike: myLike?.type || null, photos: postPhotos };
                 });
+
+                renderPosts();
+            } catch(err) {
+                container.innerHTML = '<div class="empty">Ошибка загрузки постов</div>';
+                console.error(err);
             }
+        }
+
+        // ── Сортировка ────────────────────────────────
+        function setSort(by) {
+            sortBy = by;
+            document.getElementById('sortDate').classList.toggle('active', by === 'date');
+            document.getElementById('sortLikes').classList.toggle('active', by === 'likes');
+            renderPosts();
+        }
+
+        function toggleDir() {
+            sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+            const btn = document.getElementById('sortDirBtn');
+            btn.classList.toggle('asc', sortDir === 'asc');
+            renderPosts();
+        }
+
+        function getSorted() {
+            return [...allPosts].sort((a, b) => {
+                let va, vb;
+                if (sortBy === 'date') { va = new Date(a.created_at); vb = new Date(b.created_at); }
+                else { va = a.likes - a.dislikes; vb = b.likes - b.dislikes; }
+                return sortDir === 'desc' ? vb - va : va - vb;
+            });
+        }
+
+        // ── Рендер постов ─────────────────────────────
+        function renderPosts() {
+            const container = document.getElementById('feedContainer');
+            const sorted = getSorted();
+            if (sorted.length === 0) { container.innerHTML = '<div class="empty">Пока нет историй</div>'; return; }
+
+            container.innerHTML = '';
+            sorted.forEach((post, idx) => {
+                const div = document.createElement('div');
+                div.className = 'post-item';
+                div.dataset.id = post.id;
+
+                const avatarHTML = post.author_avatar
+                    ? `<img src="${post.author_avatar}" alt="">`
+                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+
+                const photosHTML = post.photos.map(url =>
+                    `<div class="media-box"><img src="${url}" alt="фото" onclick="openPhoto('${url}')"></div>`
+                ).join('');
+
+                const videoHTML = post.video_url
+                    ? `<div class="media-box"><iframe src="https://www.youtube.com/embed/${extractYTId(post.video_url)}" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`
+                    : '';
+
+                const mediaHTML = (photosHTML || videoHTML)
+                    ? `<div class="post-media-group">${photosHTML}${videoHTML}</div>` : '';
+
+                const likedClass    = post.myLike === 'like'    ? 'liked'    : '';
+                const dislikedClass = post.myLike === 'dislike' ? 'disliked' : '';
+
+                div.innerHTML = `
+                    <div class="post-user" onclick="goTo('user-profile.html?id=${post.author_id}')">
+                        <div class="post-avatar">${avatarHTML}</div>
+                        <div class="post-username">${escHtml(post.author_nick)}</div>
+                    </div>
+                    <div class="post-text-row">
+                        <span class="post-date-prefix">${escHtml(post.date)} |</span>
+                        <span class="post-actual-text">${escHtml(post.text || '')}</span>
+                    </div>
+                    ${mediaHTML}
+                    <div class="post-actions">
+                        <button class="action-btn ${likedClass}" onclick="toggleLike('${post.id}','like',this)">
+                            <svg viewBox="0 0 24 24" fill="${post.myLike==='like'?'currentColor':'none'}" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                            <span>${post.likes}</span>
+                        </button>
+                        <button class="action-btn ${dislikedClass}" onclick="toggleLike('${post.id}','dislike',this)">
+                            <svg viewBox="0 0 24 24" fill="${post.myLike==='dislike'?'currentColor':'none'}" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+                            <span>${post.dislikes}</span>
+                        </button>
+                        <button class="action-btn" onclick="openComments('${post.id}')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            <span>Комментарии</span>
+                        </button>
+                        <span class="post-time">${timeAgo(post.created_at)}</span>
+                    </div>
+                    ${idx < sorted.length - 1 ? '<div class="post-divider"></div>' : ''}
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // ── Лайки ─────────────────────────────────────
+        async function toggleLike(postId, type, btn) {
+            if (!user) { openKeyPopup(); return; }
+
+            const post = allPosts.find(p => p.id === postId);
+            if (!post) return;
+
+            try {
+                if (post.myLike === type) {
+                    // Убрать лайк
+                    await sbDelete('likes', `post_id=eq.${postId}&user_id=eq.${user.id}`);
+                    if (type === 'like') post.likes--; else post.dislikes--;
+                    post.myLike = null;
+                } else {
+                    if (post.myLike) {
+                        // Сменить тип
+                        await sbUpdate('likes', `post_id=eq.${postId}&user_id=eq.${user.id}`, { type });
+                        if (post.myLike === 'like') { post.likes--; post.dislikes++; }
+                        else { post.dislikes--; post.likes++; }
+                    } else {
+                        // Новый лайк
+                        await sbInsert('likes', { post_id: postId, user_id: user.id, type });
+                        if (type === 'like') post.likes++; else post.dislikes++;
+                    }
+                    post.myLike = type;
+                }
+                renderPosts();
+            } catch(e) { console.error(e); }
+        }
+
+        // ── Комментарии ───────────────────────────────
+        async function openComments(postId) {
+            currentPostId = postId;
+            document.getElementById('commentsModal').classList.add('show');
+            document.getElementById('commentsList').innerHTML = '<div class="no-comments">Загрузка...</div>';
+
+            // Зрителям — скрыть поле ввода
+            const inputArea = document.getElementById('commentInputArea');
+            if (role === 'viewer') {
+                inputArea.innerHTML = '<div class="viewer-comment-note">Войдите с ключом чтобы комментировать</div>';
+            }
+
+            try {
+                const comments = await sbSelect('comments', `post_id=eq.${postId}&order=created_at.asc&select=id,author_nick,author_avatar,text,created_at`);
+                renderComments(comments);
+            } catch(e) { console.error(e); }
+        }
+
+        function renderComments(comments) {
+            const list = document.getElementById('commentsList');
+            if (comments.length === 0) { list.innerHTML = '<div class="no-comments">Пока нет комментариев</div>'; return; }
+            list.innerHTML = '';
+            comments.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'comment-item';
+                const avatarHTML = c.author_avatar
+                    ? `<img src="${c.author_avatar}" alt="">`
+                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+                div.innerHTML = `
+                    <div class="comment-avatar">${avatarHTML}</div>
+                    <div class="comment-body">
+                        <div class="comment-nick">${escHtml(c.author_nick)}</div>
+                        <div class="comment-text">${escHtml(c.text)}</div>
+                        <div class="comment-time">${timeAgo(c.created_at)}</div>
+                    </div>`;
+                list.appendChild(div);
+            });
+        }
+
+        function closeComments() {
+            document.getElementById('commentsModal').classList.remove('show');
+            currentPostId = null;
+            // Восстановить поле ввода
+            document.getElementById('commentInputArea').innerHTML = `
+                <div class="comment-input-row">
+                    <input class="comment-input" id="commentInput" placeholder="Написать комментарий..." maxlength="300">
+                    <button class="comment-send" onclick="sendComment()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                </div>`;
+        }
+
+        async function sendComment() {
+            if (!user || !currentPostId) return;
+            const input = document.getElementById('commentInput');
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+            try {
+                await sbInsert('comments', {
+                    post_id: currentPostId,
+                    author_id: user.id,
+                    author_nick: user.nickname,
+                    author_avatar: user.avatar_url || null,
+                    text
+                });
+                const comments = await sbSelect('comments', `post_id=eq.${currentPostId}&order=created_at.asc&select=id,author_nick,author_avatar,text,created_at`);
+                renderComments(comments);
+            } catch(e) { console.error(e); }
+        }
+
+        // Enter для отправки комментария
+        document.getElementById('commentsModal').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && document.getElementById('commentInput')) sendComment();
         });
 
-        // Зрителю убираем href у кнопки создания — браузер не сможет перейти
-        (function() {
-            if (localStorage.getItem('role') !== 'viewer') return;
-            var btn = document.querySelector('a.nav-item[href="create.html"]');
-            if (!btn) return;
-            btn.removeAttribute('href');
-            btn.style.cursor = 'pointer';
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                openKeyPopup();
-            }, true); // true = capture phase, срабатывает первым
-        })();
+        // Закрытие модала кликом на оверлей
+        document.getElementById('commentsModal').addEventListener('click', function(e) {
+            if (e.target === this) closeComments();
+        });
+
+        // ── Вспомогательные ───────────────────────────
+        function escHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function extractYTId(url) {
+            if (!url) return '';
+            try {
+                const u = new URL(url);
+                if (u.hostname.includes('youtu.be')) return u.pathname.slice(1).split('?')[0];
+                return u.searchParams.get('v') || '';
+            } catch { return /^[\w-]{11}$/.test(url) ? url : ''; }
+        }
+
+        function openPhoto(url) {
+            window.open(url, '_blank');
+        }
+
+        // ── Запуск ────────────────────────────────────
+        window.addEventListener('load', () => {
+            requestAnimationFrame(() => document.body.classList.add('loaded'));
+            loadPosts();
+        });
     </script>
 </body>
 </html>
