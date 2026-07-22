@@ -7,213 +7,353 @@
     <script>
         (function(){
             var r = localStorage.getItem('role');
-            if (!r) { window.location.replace('index.html'); return; }
+            if (!r) { window.location.replace('index.html'); }
         })();
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-        @font-face { font-family: 'basis33'; src: url('basis33.ttf') format('truetype'); }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
+        @font-face { font-family:'basis33'; src:url('basis33.ttf') format('truetype'); }
+        * { box-sizing:border-box; margin:0; padding:0; }
         body {
-            height: 100vh;
-            display: flex; justify-content: center; align-items: center;
-            font-family: 'basis33', 'Press Start 2P', monospace;
-            overflow: hidden;
-            background-color: #0f141c;
-            position: relative;
-            opacity: 0;
-            transition: opacity 0.4s ease;
+            height:100vh; display:flex; justify-content:center; align-items:center;
+            font-family:'basis33',sans-serif; overflow:hidden;
+            background-color:#0f141c; position:relative;
+            opacity:0; transition:opacity 0.4s ease;
         }
-        body.loaded { opacity: 1; }
-
+        body.loaded { opacity:1; }
         body::before {
-            content: "";
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: url('f.png') no-repeat center center fixed;
-            background-size: cover;
-            filter: blur(10px); transform: scale(1.05); z-index: -1;
+            content:""; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:url('f.png') no-repeat center center fixed;
+            background-size:cover; filter:blur(10px); transform:scale(1.05); z-index:-1;
         }
-
-        /* ── Навигация ─────────────────────────────────────── */
-        .top-nav-zone { position: fixed; top: 0; left: 0; width: 100%; height: 50px; z-index: 9999; }
-
+        .top-nav-zone { position:fixed; top:0; left:0; width:100%; height:50px; z-index:9999; }
         .navbar-container {
-            position: fixed; top: -160px; left: 50%; transform: translateX(-50%);
-            width: 940px; padding: 20px 35px; border-radius: 0 0 60px 60px;
-            background: linear-gradient(160deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.05) 45%, rgba(255,255,255,0.01) 100%);
-            backdrop-filter: blur(14px) saturate(1.5); -webkit-backdrop-filter: blur(14px) saturate(1.5);
-            border: 1px solid rgba(255,255,255,0.18); border-top: none;
-            box-shadow: 0 24px 50px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.22);
-            transition: top 0.45s cubic-bezier(0.175,0.885,0.32,1.12); z-index: 10000;
+            position:fixed; top:-160px; left:50%; transform:translateX(-50%);
+            width:940px; padding:20px 35px; border-radius:0 0 60px 60px;
+            background:linear-gradient(160deg,rgba(255,255,255,0.14) 0%,rgba(255,255,255,0.05) 45%,rgba(255,255,255,0.01) 100%);
+            backdrop-filter:blur(14px) saturate(1.5); -webkit-backdrop-filter:blur(14px) saturate(1.5);
+            border:1px solid rgba(255,255,255,0.18); border-top:none;
+            box-shadow:0 24px 50px rgba(0,0,0,0.38),inset 0 1px 0 rgba(255,255,255,0.22);
+            transition:top 0.45s cubic-bezier(0.175,0.885,0.32,1.12); z-index:10000;
         }
-        .top-nav-zone:hover + .navbar-container, .navbar-container:hover { top: 0; }
-
+        .top-nav-zone:hover + .navbar-container,.navbar-container:hover { top:0; }
         .navbar-inner {
-            background: #00969d; border-radius: 48px;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 10px 25px; width: 100%; box-shadow: inset 0 3px 6px rgba(0,0,0,0.3);
+            background:#00969d; border-radius:48px; display:flex; align-items:center;
+            justify-content:space-between; padding:10px 25px; width:100%;
+            box-shadow:inset 0 3px 6px rgba(0,0,0,0.3);
         }
-
         .nav-item {
-            display: flex; align-items: center; justify-content: center;
-            width: 62px; height: 62px; border-radius: 50%;
-            cursor: pointer; color: rgba(255,255,255,0.75);
-            transition: background 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease, transform 0.3s cubic-bezier(0.34,1.5,0.64,1);
-            border: 1px solid transparent; background: transparent; text-decoration: none;
+            display:flex; align-items:center; justify-content:center;
+            width:62px; height:62px; border-radius:50%; cursor:pointer;
+            color:rgba(255,255,255,0.75);
+            transition:background 0.28s,border-color 0.28s,box-shadow 0.28s,transform 0.3s cubic-bezier(0.34,1.5,0.64,1);
+            border:1px solid transparent; background:transparent; text-decoration:none;
         }
-        .nav-item svg { width: 28px; height: 28px; display: block; transition: filter 0.28s ease, color 0.28s ease; }
-        .nav-spacer { flex-shrink: 0; width: 320px; height: 62px; background: #007c85; border-radius: 35px; box-shadow: inset 0 3px 6px rgba(0,0,0,0.25); }
+        .nav-item svg { width:28px; height:28px; display:block; }
+        .nav-spacer { flex-shrink:0; width:320px; height:62px; background:#007c85; border-radius:35px; }
+        .nav-item:hover,.nav-item.active {
+            background:linear-gradient(145deg,rgba(255,255,255,0.30),rgba(255,255,255,0.08));
+            backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.38);
+            box-shadow:inset 0 1px 0 rgba(255,255,255,0.40),0 6px 16px rgba(0,0,0,0.20);
+            transform:scale(1.06); color:#fff;
+        }
+        .nav-item:hover svg,.nav-item.active svg { color:#fff; filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 12px rgba(255,255,255,0.9)); }
 
-        .nav-item:hover, .nav-item.active {
-            background: linear-gradient(145deg, rgba(255,255,255,0.30), rgba(255,255,255,0.08));
-            backdrop-filter: blur(10px) saturate(1.6); -webkit-backdrop-filter: blur(10px) saturate(1.6);
-            border: 1px solid rgba(255,255,255,0.38);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.40), inset 0 -1px 0 rgba(0,0,0,0.10), 0 6px 16px rgba(0,0,0,0.20);
-            transform: scale(1.06); color: #ffffff;
-        }
-        .nav-item:hover svg, .nav-item.active svg {
-            color: #ffffff; filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 12px rgba(255,255,255,0.9));
-        }
-
-        /* ── Карточка поиска ───────────────────────────────── */
+        /* ── Основная карточка ───────────────────────── */
         .search-card {
-            position: relative; z-index: 10;
-            background: linear-gradient(145deg, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.01) 100%);
-            backdrop-filter: blur(14px) saturate(1.5); -webkit-backdrop-filter: blur(14px) saturate(1.5);
-            border: 1px solid rgba(255,255,255,0.18); border-radius: 120px; padding: 55px 85px;
-            box-shadow: 0 32px 70px rgba(0,0,0,0.38), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.24), inset 0 -2px 0 rgba(0,0,0,0.14);
-            display: flex; align-items: center; width: 740px; max-width: 95%;
-            animation: cardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) both; animation-delay: 0.15s;
+            position:relative; z-index:10;
+            background:linear-gradient(145deg,rgba(255,255,255,0.10) 0%,rgba(255,255,255,0.04) 50%,rgba(255,255,255,0.01) 100%);
+            backdrop-filter:blur(14px) saturate(1.5); -webkit-backdrop-filter:blur(14px) saturate(1.5);
+            border:1px solid rgba(255,255,255,0.18); border-radius:80px; padding:45px 70px;
+            box-shadow:0 32px 70px rgba(0,0,0,0.38),inset 0 1px 0 rgba(255,255,255,0.24);
+            display:flex; flex-direction:column; width:1000px; max-width:95%;
+            height:86vh; max-height:860px;
+            animation:cardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) both; animation-delay:0.15s;
         }
-        @keyframes cardIn { from { opacity:0; transform:translateY(18px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+        @keyframes cardIn { from{opacity:0;transform:translateY(18px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
 
-        .search-wrapper { position: relative; width: 100%; display: flex; align-items: center; }
-
+        /* ── Поисковая строка ────────────────────────── */
+        .search-wrapper {
+            display:flex; align-items:center; position:relative;
+            background:#fff; border-radius:50px; margin-bottom:24px; flex-shrink:0;
+            box-shadow:inset 0 4px 8px rgba(0,0,0,0.18);
+            transition:box-shadow 0.3s;
+        }
+        .search-wrapper:focus-within { box-shadow:inset 0 4px 8px rgba(0,0,0,0.18),0 0 0 3px rgba(0,150,157,0.28); }
         .search-input {
-            width: 100%; padding: 22px 70px 22px 30px; border: none; border-radius: 50px;
-            font-family: 'basis33', 'Press Start 2P', monospace; font-size: 16px; font-weight: 700;
-            letter-spacing: 1px; color: #00878f; background: #ffffff; outline: none;
-            text-transform: uppercase; caret-color: #00878f;
-            box-shadow: inset 0 4px 8px rgba(0,0,0,0.2); transition: box-shadow 0.35s ease;
+            flex:1; padding:20px 16px 20px 30px; border:none; outline:none; background:transparent;
+            font-family:'basis33','Press Start 2P',monospace; font-size:16px;
+            color:#00878f; caret-color:#00878f; text-transform:uppercase; letter-spacing:1px;
         }
-        .search-input:focus { box-shadow: inset 0 4px 8px rgba(0,0,0,0.20), 0 0 0 3px rgba(0,150,157,0.28), 0 0 22px rgba(0,150,157,0.14); }
-        .search-input::placeholder { color: #00878f; opacity: 0.8; font-size: 16px; transition: opacity 0.3s ease; }
-        .search-input:focus::placeholder { opacity: 0.30; }
-
+        .search-input::placeholder { color:#00878f; opacity:0.75; }
         .search-btn {
-            position: absolute; right: 10px; background: transparent; border: none;
-            border-radius: 50%; cursor: pointer; width: 52px; height: 52px;
-            display: flex; align-items: center; justify-content: center; color: #00878f;
-            transition: all 0.28s cubic-bezier(0.34,1.5,0.64,1);
+            background:transparent; border:none; cursor:pointer; padding:0 20px 0 8px;
+            color:#00878f; transition:all 0.25s cubic-bezier(0.34,1.5,0.64,1);
         }
-        .search-btn svg { width: 30px; height: 30px; transition: filter 0.28s ease; }
-        .search-btn:hover { transform: scale(1.12); }
-        .search-btn:hover svg { filter: drop-shadow(0 0 6px rgba(0,135,143,0.6)); }
+        .search-btn svg { width:28px; height:28px; display:block; }
+        .search-btn:hover { transform:scale(1.15); color:#00b0b8; }
 
-        /* ── Попап «нужен ключ» ────────────────────────────── */
-        .key-popup {
-            position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%) scale(0.85);
-            z-index: 99999;
-            background: linear-gradient(145deg, rgba(255,255,255,0.13), rgba(255,255,255,0.05));
-            backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6);
-            border: 1px solid rgba(255,255,255,0.22); border-radius: 48px; padding: 42px 60px;
-            text-align: center;
-            box-shadow: 0 24px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.28);
-            opacity: 0; pointer-events: none;
-            transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.34,1.3,0.64,1);
+        /* ── Фильтры ─────────────────────────────────── */
+        .filters { display:flex; gap:10px; margin-bottom:20px; flex-shrink:0; flex-wrap:wrap; }
+        .filter-btn {
+            background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.20);
+            border-radius:30px; padding:7px 20px; cursor:pointer;
+            font-family:'basis33',monospace; font-size:16px; color:rgba(255,255,255,0.65);
+            letter-spacing:1px; text-transform:uppercase; transition:all 0.22s;
         }
-        .key-popup.show { opacity: 1; pointer-events: all; transform: translate(-50%, -50%) scale(1); }
-        .key-popup-icon { font-size: 48px; margin-bottom: 18px; display: block; }
-        .key-popup-title { font-family: 'basis33', monospace; font-size: 28px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
-        .key-popup-text { font-family: 'basis33', monospace; font-size: 20px; color: rgba(255,255,255,0.7); letter-spacing: 1px; text-transform: uppercase; line-height: 1.5; margin-bottom: 30px; }
-        .key-popup-close {
-            background: #00969d; border: none; border-radius: 50px; padding: 12px 44px;
-            font-family: 'basis33', monospace; font-size: 20px; letter-spacing: 2px;
-            color: #ffffff; text-transform: uppercase; cursor: pointer;
-            box-shadow: 0 6px 20px rgba(0,150,157,0.45);
-            transition: background 0.25s ease, transform 0.25s cubic-bezier(0.34,1.5,0.64,1);
+        .filter-btn.active { background:rgba(0,150,157,0.35); border-color:#00969d; color:#fff; box-shadow:0 0 12px rgba(0,150,157,0.35); }
+        .filter-btn:hover { background:rgba(255,255,255,0.18); color:#fff; }
+
+        /* ── Результаты ──────────────────────────────── */
+        .results-container { display:flex; flex-direction:column; gap:20px; overflow-y:auto; flex:1; padding-right:12px; }
+        .results-container::-webkit-scrollbar { width:6px; }
+        .results-container::-webkit-scrollbar-thumb { background:rgba(0,150,157,0.4); border-radius:10px; }
+
+        .state-msg { text-align:center; padding:50px 0; font-family:'basis33',monospace; font-size:18px; color:rgba(255,255,255,0.4); letter-spacing:1px; text-transform:uppercase; line-height:1.8; }
+
+        /* ── Результат: пост ─────────────────────────── */
+        .result-post {
+            background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.10);
+            border-radius:32px; padding:20px 28px; cursor:pointer;
+            transition:background 0.22s,border-color 0.22s,transform 0.22s cubic-bezier(0.34,1.5,0.64,1);
         }
-        .key-popup-close:hover { background: #00b0b8; transform: translateY(-2px); }
-        .key-popup-overlay { position: fixed; inset: 0; z-index: 99998; display: none; }
-        .key-popup-overlay.show { display: block; }
+        .result-post:hover { background:rgba(255,255,255,0.11); border-color:rgba(255,255,255,0.22); transform:translateY(-2px); }
+        .result-post-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+        .result-avatar { width:28px; height:28px; background:#00969d; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; overflow:hidden; flex-shrink:0; }
+        .result-avatar img { width:100%; height:100%; object-fit:cover; }
+        .result-avatar svg { width:14px; height:14px; }
+        .result-nick { font-family:'basis33',monospace; font-size:20px; color:#00a4ad; }
+        .result-date { font-family:'basis33',monospace; font-size:15px; color:rgba(255,255,255,0.4); margin-left:auto; }
+        .result-text { font-family:'basis33',monospace; font-size:18px; color:rgba(255,255,255,0.82); line-height:1.4; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+        .result-tags { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+        .result-tag { background:rgba(0,150,157,0.22); border:1px solid rgba(0,150,157,0.38); border-radius:20px; padding:3px 12px; font-family:'basis33',monospace; font-size:13px; color:#00c8d4; letter-spacing:1px; }
+
+        /* ── Результат: пользователь ─────────────────── */
+        .result-user {
+            display:flex; align-items:center; gap:14px;
+            background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.10);
+            border-radius:32px; padding:18px 28px; cursor:pointer; text-decoration:none;
+            transition:background 0.22s,border-color 0.22s,transform 0.22s cubic-bezier(0.34,1.5,0.64,1);
+        }
+        .result-user:hover { background:rgba(255,255,255,0.11); border-color:rgba(255,255,255,0.22); transform:translateY(-2px); }
+        .result-user-avatar { width:44px; height:44px; background:#00969d; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; overflow:hidden; flex-shrink:0; }
+        .result-user-avatar img { width:100%; height:100%; object-fit:cover; }
+        .result-user-avatar svg { width:22px; height:22px; }
+        .result-user-nick { font-family:'basis33',monospace; font-size:24px; color:#00a4ad; }
+        .result-user-count { font-family:'basis33',monospace; font-size:15px; color:rgba(255,255,255,0.4); margin-left:auto; }
     </style>
 </head>
 <body>
-
-    <div class="key-popup-overlay" id="keyOverlay" onclick="closeKeyPopup()"></div>
-    <div class="key-popup" id="keyPopup">
-        <span class="key-popup-icon">🔑</span>
-        <div class="key-popup-title">Доступ закрыт</div>
-        <div class="key-popup-text">Для публикации историй<br>нужен ключ доступа</div>
-        <button class="key-popup-close" onclick="closeKeyPopup()">Понятно</button>
-    </div>
-
     <div class="top-nav-zone"></div>
-
     <div class="navbar-container">
         <div class="navbar-inner">
-            <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
-            <a href="news.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></svg></a>
+            <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            <a href="news.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></a>
             <div class="nav-spacer"></div>
-            <a href="create.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg></a>
-            <a href="profile.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></a>
+            <a href="create.html" class="nav-item" id="createNavBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></a>
+            <a href="profile.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></a>
         </div>
+    </div>
+
+    <!-- Попап для зрителей -->
+    <div id="keyOverlay" onclick="closeKeyPopup()" style="position:fixed;inset:0;z-index:99998;display:none;"></div>
+    <div id="keyPopup" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.85);z-index:99999;background:linear-gradient(145deg,rgba(255,255,255,0.13),rgba(255,255,255,0.05));backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.22);border-radius:48px;padding:42px 60px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.45);opacity:0;pointer-events:none;transition:opacity 0.3s,transform 0.35s cubic-bezier(0.34,1.3,0.64,1);">
+        <div style="font-size:48px;margin-bottom:18px;">🔑</div>
+        <div style="font-family:'basis33',monospace;font-size:28px;color:#fff;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">Доступ закрыт</div>
+        <div style="font-family:'basis33',monospace;font-size:20px;color:rgba(255,255,255,0.7);letter-spacing:1px;text-transform:uppercase;line-height:1.5;margin-bottom:30px;">Для публикации историй<br>нужен ключ доступа</div>
+        <button onclick="closeKeyPopup()" style="background:#00969d;border:none;border-radius:50px;padding:12px 44px;font-family:'basis33',monospace;font-size:20px;letter-spacing:2px;color:#fff;text-transform:uppercase;cursor:pointer;">Понятно</button>
     </div>
 
     <div class="search-card">
         <div class="search-wrapper">
-            <input type="text" class="search-input" placeholder="ПОИСК ПО ДАТЕ/НИКУ/ТЭГУ" spellcheck="false" autocomplete="off">
-            <button class="search-btn" type="button">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
+            <input class="search-input" id="searchInput" type="text"
+                placeholder="ПОИСК ПО ДАТЕ/НИКУ/ТЭГУ"
+                spellcheck="false" autocomplete="off">
+            <button class="search-btn" onclick="doSearch()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </button>
+        </div>
+
+        <div class="filters">
+            <button class="filter-btn active" data-filter="all"    onclick="setFilter('all')">Всё</button>
+            <button class="filter-btn"        data-filter="posts"  onclick="setFilter('posts')">Истории</button>
+            <button class="filter-btn"        data-filter="users"  onclick="setFilter('users')">Пользователи</button>
+            <button class="filter-btn"        data-filter="date"   onclick="setFilter('date')">По дате</button>
+        </div>
+
+        <div class="results-container" id="resultsContainer">
+            <div class="state-msg">Введите запрос для поиска</div>
         </div>
     </div>
 
+    <script src="config.js"></script>
     <script>
-        window.addEventListener('load', () => { requestAnimationFrame(() => document.body.classList.add('loaded')); });
+        const me = getCurrentUser();
+        let currentFilter = 'all';
+        let searchTimer   = null;
+
+        window.addEventListener('load', () => {
+            requestAnimationFrame(() => document.body.classList.add('loaded'));
+
+            if (localStorage.getItem('role') === 'viewer') {
+                const cb = document.getElementById('createNavBtn');
+                if (cb) cb.style.visibility = 'hidden';
+            }
+
+            // Поиск при вводе с задержкой
+            document.getElementById('searchInput').addEventListener('input', function() {
+                clearTimeout(searchTimer);
+                const q = this.value.trim();
+                if (!q) { showPlaceholder(); return; }
+                searchTimer = setTimeout(() => doSearch(), 400);
+            });
+
+            // Enter для поиска
+            document.getElementById('searchInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { clearTimeout(searchTimer); doSearch(); }
+            });
+        });
+
+        function setFilter(f) {
+            currentFilter = f;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === f);
+            });
+            const q = document.getElementById('searchInput').value.trim();
+            if (q) doSearch();
+        }
+
+        async function doSearch() {
+            const q = document.getElementById('searchInput').value.trim();
+            if (!q) { showPlaceholder(); return; }
+
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = '<div class="state-msg">Поиск...</div>';
+
+            try {
+                let posts = [], users = [];
+
+                const isDateQuery = /^\d{2}\.\d{2}/.test(q); // формат ДД.ММ...
+
+                // ── Поиск историй ──────────────────────────────
+                if (currentFilter !== 'users') {
+                    if (isDateQuery || currentFilter === 'date') {
+                        // Поиск по дате
+                        posts = await sbSelect('posts',
+                            `date=ilike.*${encodeURIComponent(q)}*&order=created_at.desc&select=id,author_id,author_nick,author_avatar,date,text,created_at&limit=30`
+                        );
+                    } else {
+                        // Поиск по тексту и нику
+                        const [byText, byNick] = await Promise.all([
+                            sbSelect('posts', `text=ilike.*${encodeURIComponent(q)}*&order=created_at.desc&select=id,author_id,author_nick,author_avatar,date,text,created_at&limit=20`),
+                            sbSelect('posts', `author_nick=ilike.*${encodeURIComponent(q)}*&order=created_at.desc&select=id,author_id,author_nick,author_avatar,date,text,created_at&limit=20`)
+                        ]);
+                        // Объединяем без дублей
+                        const seen = new Set();
+                        [...byNick, ...byText].forEach(p => { if (!seen.has(p.id)) { seen.add(p.id); posts.push(p); } });
+                    }
+                }
+
+                // ── Поиск пользователей ────────────────────────
+                if (currentFilter !== 'posts' && currentFilter !== 'date') {
+                    users = await sbSelect('users',
+                        `nickname=ilike.*${encodeURIComponent(q)}*&select=id,nickname,avatar_url&limit=10`
+                    );
+                }
+
+                renderResults(posts, users, q);
+
+            } catch(e) {
+                container.innerHTML = '<div class="state-msg">Ошибка поиска</div>';
+                console.error(e);
+            }
+        }
+
+        async function renderResults(posts, users, q) {
+            const container = document.getElementById('resultsContainer');
+
+            if (!posts.length && !users.length) {
+                container.innerHTML = `<div class="state-msg">Ничего не найдено по запросу<br>«${escHtml(q)}»</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+
+            // Пользователи — сначала
+            if (users.length) {
+                // Считаем посты для каждого
+                const postCounts = await Promise.all(
+                    users.map(u => sbSelect('posts', `author_id=eq.${u.id}&select=id`).then(r => r.length).catch(() => 0))
+                );
+                users.forEach((u, i) => {
+                    const avatarHTML = u.avatar_url
+                        ? `<img src="${u.avatar_url}" alt="">`
+                        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+
+                    const el = document.createElement('a');
+                    el.className = 'result-user';
+                    el.href = me && u.id === me.id ? 'profile.html' : `user-profile.html?id=${u.id}`;
+                    el.innerHTML = `
+                        <div class="result-user-avatar">${avatarHTML}</div>
+                        <div class="result-user-nick">${escHtml(u.nickname)}</div>
+                        <div class="result-user-count">${postCounts[i]} историй</div>
+                    `;
+                    container.appendChild(el);
+                });
+            }
+
+            // Посты
+            posts.forEach(p => {
+                const avatarHTML = p.author_avatar
+                    ? `<img src="${p.author_avatar}" alt="">`
+                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+
+                const div = document.createElement('div');
+                div.className = 'result-post';
+                div.innerHTML = `
+                    <div class="result-post-header">
+                        <div class="result-avatar">${avatarHTML}</div>
+                        <div class="result-nick">${escHtml(p.author_nick)}</div>
+                        <div class="result-date">${escHtml(p.date)}</div>
+                    </div>
+                    ${p.text ? `<div class="result-text">${escHtml(p.text)}</div>` : ''}
+                `;
+                div.onclick = () => goTo(`news.html`);
+                container.appendChild(div);
+            });
+        }
+
+        function showPlaceholder() {
+            document.getElementById('resultsContainer').innerHTML = '<div class="state-msg">Введите запрос для поиска</div>';
+        }
+
+        function openKeyPopup()  {
+            const p = document.getElementById('keyPopup'), o = document.getElementById('keyOverlay');
+            p.style.opacity = '1'; p.style.pointerEvents = 'all';
+            p.style.transform = 'translate(-50%,-50%) scale(1)'; o.style.display = 'block';
+        }
+        function closeKeyPopup() {
+            const p = document.getElementById('keyPopup'), o = document.getElementById('keyOverlay');
+            p.style.opacity = '0'; p.style.pointerEvents = 'none';
+            p.style.transform = 'translate(-50%,-50%) scale(0.85)'; o.style.display = 'none';
+        }
+
+        function escHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
 
         document.querySelectorAll('a[href]').forEach(link => {
             link.addEventListener('click', function(e) {
                 const href = this.getAttribute('href');
-
-                if (href && !href.startsWith('#') && !href.startsWith('http')) {
-                    e.preventDefault();
-                    document.body.style.transition = 'opacity 0.3s ease';
-                    document.body.style.opacity = '0';
-                    setTimeout(() => { window.location.href = href; }, 310);
+                if (href === 'create.html' && localStorage.getItem('role') === 'viewer') {
+                    e.preventDefault(); openKeyPopup(); return;
+                }
+                if (href && !href.startsWith('#') && !href.startsWith('http') && !href.startsWith('mailto')) {
+                    e.preventDefault(); goTo(href);
                 }
             });
         });
-
-        function openKeyPopup() {
-            document.getElementById('keyPopup').classList.add('show');
-            document.getElementById('keyOverlay').classList.add('show');
-        }
-        function closeKeyPopup() {
-            document.getElementById('keyPopup').classList.remove('show');
-            document.getElementById('keyOverlay').classList.remove('show');
-        }
-
-
-
-        // Зрителю убираем href у кнопки создания — браузер не сможет перейти
-        (function() {
-            if (localStorage.getItem('role') !== 'viewer') return;
-            var btn = document.querySelector('a.nav-item[href="create.html"]');
-            if (!btn) return;
-            btn.removeAttribute('href');
-            btn.style.cursor = 'pointer';
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                openKeyPopup();
-            }, true); // true = capture phase, срабатывает первым
-        })();
     </script>
 </body>
 </html>

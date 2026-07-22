@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль пользователя</title>
+    <script>
+        (function(){
+            var r = localStorage.getItem('role');
+            if (!r) { window.location.replace('index.html'); }
+        })();
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @font-face { font-family:'basis33'; src:url('basis33.ttf') format('truetype'); }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body {
+            height:100vh; display:flex; justify-content:center; align-items:center;
+            font-family:'basis33',sans-serif; overflow:hidden;
+            background-color:#0f141c; position:relative;
+            opacity:0; transition:opacity 0.4s ease;
+        }
+        body.loaded { opacity:1; }
+        body::before {
+            content:""; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:url('f.png') no-repeat center center fixed;
+            background-size:cover; filter:blur(10px); transform:scale(1.05); z-index:-1;
+        }
+        .top-nav-zone { position:fixed; top:0; left:0; width:100%; height:50px; z-index:9999; }
+        .navbar-container {
+            position:fixed; top:-160px; left:50%; transform:translateX(-50%);
+            width:940px; padding:20px 35px; border-radius:0 0 60px 60px;
+            background:linear-gradient(160deg,rgba(255,255,255,0.14) 0%,rgba(255,255,255,0.05) 45%,rgba(255,255,255,0.01) 100%);
+            backdrop-filter:blur(14px) saturate(1.5); -webkit-backdrop-filter:blur(14px) saturate(1.5);
+            border:1px solid rgba(255,255,255,0.18); border-top:none;
+            box-shadow:0 24px 50px rgba(0,0,0,0.38),inset 0 1px 0 rgba(255,255,255,0.22);
+            transition:top 0.45s cubic-bezier(0.175,0.885,0.32,1.12); z-index:10000;
+        }
+        .top-nav-zone:hover + .navbar-container, .navbar-container:hover { top:0; }
+        .navbar-inner {
+            background:#00969d; border-radius:48px; display:flex; align-items:center;
+            justify-content:space-between; padding:10px 25px; width:100%;
+            box-shadow:inset 0 3px 6px rgba(0,0,0,0.3);
+        }
+        .nav-item {
+            display:flex; align-items:center; justify-content:center;
+            width:62px; height:62px; border-radius:50%; cursor:pointer;
+            color:rgba(255,255,255,0.75);
+            transition:background 0.28s,border-color 0.28s,box-shadow 0.28s,transform 0.3s cubic-bezier(0.34,1.5,0.64,1);
+            border:1px solid transparent; background:transparent; text-decoration:none;
+        }
+        .nav-item svg { width:28px; height:28px; display:block; }
+        .nav-spacer { flex-shrink:0; width:320px; height:62px; background:#007c85; border-radius:35px; }
+        .nav-item:hover,.nav-item.active {
+            background:linear-gradient(145deg,rgba(255,255,255,0.30),rgba(255,255,255,0.08));
+            backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.38);
+            box-shadow:inset 0 1px 0 rgba(255,255,255,0.40),0 6px 16px rgba(0,0,0,0.20);
+            transform:scale(1.06); color:#fff;
+        }
+        .nav-item:hover svg,.nav-item.active svg { color:#fff; filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 12px rgba(255,255,255,0.9)); }
+
+        .profile-card {
+            position:relative; z-index:10;
+            background:linear-gradient(145deg,rgba(255,255,255,0.10) 0%,rgba(255,255,255,0.04) 50%,rgba(255,255,255,0.01) 100%);
+            backdrop-filter:blur(14px) saturate(1.5); -webkit-backdrop-filter:blur(14px) saturate(1.5);
+            border:1px solid rgba(255,255,255,0.18); border-radius:80px; padding:50px 70px;
+            box-shadow:0 32px 70px rgba(0,0,0,0.38),inset 0 1px 0 rgba(255,255,255,0.24);
+            display:flex; justify-content:space-between; width:940px; max-width:95%; min-height:440px;
+            animation:cardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) both; animation-delay:0.15s;
+        }
+        @keyframes cardIn { from{opacity:0;transform:translateY(18px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+        .profile-left { display:flex; flex-direction:column; gap:30px; width:48%; }
+        .user-block { display:flex; align-items:center; gap:20px; }
+        .avatar-circle {
+            width:120px; height:120px; background:#fff; border-radius:50%;
+            display:flex; align-items:center; justify-content:center; color:#00969d;
+            box-shadow:0 8px 20px rgba(0,0,0,0.18); overflow:hidden; flex-shrink:0;
+        }
+        .avatar-circle img { width:100%; height:100%; object-fit:cover; }
+        .avatar-circle svg { width:60px; height:60px; }
+        .user-name { font-size:46px; font-weight:bold; color:#00a4ad; }
+        .post-count { font-size:18px; color:rgba(255,255,255,0.45); letter-spacing:1px; text-transform:uppercase; margin-top:6px; }
+
+        /* ── Кнопка добавить в друзья ────────────────── */
+        .friend-action-btn {
+            border:none; border-radius:40px; padding:14px 32px; cursor:pointer;
+            font-family:'basis33',monospace; font-size:18px; letter-spacing:1px;
+            text-transform:uppercase; transition:all 0.28s cubic-bezier(0.34,1.5,0.64,1);
+            align-self:flex-start;
+        }
+        .friend-action-btn.add { background:#00969d; color:#fff; box-shadow:0 6px 18px rgba(0,150,157,0.42); }
+        .friend-action-btn.add:hover { background:#00b0b8; transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,150,157,0.55); }
+        .friend-action-btn.pending { background:rgba(255,183,77,0.22); border:1px solid rgba(255,183,77,0.45); color:#ffb74d; cursor:default; }
+        .friend-action-btn.friends { background:rgba(0,200,100,0.18); border:1px solid rgba(0,200,100,0.4); color:#00e676; cursor:default; }
+
+        /* ── Последние истории ───────────────────────── */
+        .profile-right { width:46%; display:flex; flex-direction:column; gap:16px; padding-top:10px; overflow:hidden; }
+        .stories-title { font-size:24px; color:#fff; letter-spacing:3px; font-weight:normal; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.12); padding-bottom:10px; }
+        .stories-list { display:flex; flex-direction:column; gap:14px; overflow-y:auto; flex:1; }
+        .stories-list::-webkit-scrollbar { width:4px; }
+        .stories-list::-webkit-scrollbar-thumb { background:rgba(0,150,157,0.4); border-radius:4px; }
+        .story-item { display:flex; flex-direction:column; gap:4px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+        .story-date { font-family:'basis33',monospace; font-size:16px; color:#00a4ad; letter-spacing:1px; }
+        .story-text { font-family:'basis33',monospace; font-size:16px; color:rgba(255,255,255,0.75); line-height:1.4; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+        .story-meta { font-size:14px; color:rgba(255,255,255,0.3); letter-spacing:1px; }
+        .no-stories { font-family:'basis33',monospace; font-size:16px; color:rgba(255,255,255,0.35); text-transform:uppercase; text-align:center; padding:30px 0; }
+        .loading { font-family:'basis33',monospace; font-size:18px; color:rgba(255,255,255,0.4); text-align:center; padding:30px 0; }
+    </style>
+</head>
+<body>
+    <div class="top-nav-zone"></div>
+    <div class="navbar-container">
+        <div class="navbar-inner">
+            <a href="search.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></a>
+            <a href="news.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></a>
+            <div class="nav-spacer"></div>
+            <a href="create.html" class="nav-item" id="createNavBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></a>
+            <a href="profile.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></a>
+        </div>
+    </div>
+
+    <div class="profile-card">
+        <div class="profile-left">
+            <div class="user-block">
+                <div class="avatar-circle" id="avatarCircle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <div>
+                    <div class="user-name" id="userName">Загрузка...</div>
+                    <div class="post-count" id="postCount"></div>
+                </div>
+            </div>
+            <div id="friendActionArea"></div>
+        </div>
+
+        <div class="profile-right">
+            <div class="stories-title">Истории</div>
+            <div class="stories-list" id="storiesList">
+                <div class="loading">Загрузка...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        const me = getCurrentUser();
+        const params = new URLSearchParams(location.search);
+        const targetId = params.get('id');
+
+        window.addEventListener('load', async () => {
+            requestAnimationFrame(() => document.body.classList.add('loaded'));
+            if (!targetId) { goTo('news.html'); return; }
+
+            // Если это свой профиль — перенаправить
+            if (me && targetId === me.id) { goTo('profile.html'); return; }
+
+            if (localStorage.getItem('role') === 'viewer') {
+                const cb = document.getElementById('createNavBtn');
+                if (cb) cb.style.visibility = 'hidden';
+            }
+
+            await Promise.all([loadUser(), loadStories(), loadFriendStatus()]);
+        });
+
+        async function loadUser() {
+            try {
+                const users = await sbSelect('users', `id=eq.${targetId}&select=id,nickname,avatar_url`);
+                if (!users.length) { goTo('news.html'); return; }
+                const u = users[0];
+                document.title = u.nickname + ' — Профиль';
+                document.getElementById('userName').textContent = u.nickname;
+                if (u.avatar_url) {
+                    document.getElementById('avatarCircle').innerHTML = `<img src="${u.avatar_url}" alt="">`;
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadStories() {
+            const list = document.getElementById('storiesList');
+            try {
+                const posts = await sbSelect('posts',
+                    `author_id=eq.${targetId}&order=created_at.desc&select=id,date,text,created_at&limit=10`
+                );
+                document.getElementById('postCount').textContent = posts.length + ' ' + plural(posts.length, 'история', 'истории', 'историй');
+
+                if (!posts.length) { list.innerHTML = '<div class="no-stories">Нет историй</div>'; return; }
+                list.innerHTML = '';
+                posts.forEach(p => {
+                    const div = document.createElement('div');
+                    div.className = 'story-item';
+                    div.innerHTML = `
+                        <div class="story-date">${escHtml(p.date)}</div>
+                        ${p.text ? `<div class="story-text">${escHtml(p.text)}</div>` : ''}
+                        <div class="story-meta">${timeAgo(p.created_at)}</div>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch(e) { list.innerHTML = '<div class="no-stories">Ошибка загрузки</div>'; }
+        }
+
+        async function loadFriendStatus() {
+            if (!me) return;
+            const area = document.getElementById('friendActionArea');
+            try {
+                const f = await sbSelect('friends',
+                    `or=(and(user_id.eq.${me.id},friend_id.eq.${targetId}),and(user_id.eq.${targetId},friend_id.eq.${me.id}))&select=id,status,user_id`
+                );
+                if (!f.length) {
+                    area.innerHTML = `<button class="friend-action-btn add" onclick="sendRequest()">+ Добавить в друзья</button>`;
+                } else if (f[0].status === 'accepted') {
+                    area.innerHTML = `<button class="friend-action-btn friends">✓ В друзьях</button>`;
+                } else {
+                    const isOutgoing = f[0].user_id === me.id;
+                    area.innerHTML = isOutgoing
+                        ? `<button class="friend-action-btn pending">Заявка отправлена</button>`
+                        : `<button class="friend-action-btn add" onclick="acceptRequest('${f[0].id}')">✓ Принять заявку</button>`;
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function sendRequest() {
+            try {
+                await sbInsert('friends', { user_id: me.id, friend_id: targetId, status: 'pending' });
+                await loadFriendStatus();
+            } catch(e) { console.error(e); }
+        }
+
+        async function acceptRequest(id) {
+            try {
+                await sbUpdate('friends', `id=eq.${id}`, { status: 'accepted' });
+                await loadFriendStatus();
+            } catch(e) { console.error(e); }
+        }
+
+        function plural(n, one, few, many) {
+            const mod10 = n % 10, mod100 = n % 100;
+            if (mod10 === 1 && mod100 !== 11) return one;
+            if ([2,3,4].includes(mod10) && ![12,13,14].includes(mod100)) return few;
+            return many;
+        }
+        function escHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+        document.querySelectorAll('a[href]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                if (href && !href.startsWith('#') && !href.startsWith('http') && !href.startsWith('mailto')) {
+                    e.preventDefault(); goTo(href);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

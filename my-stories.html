@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои истории</title>
+    <script>
+        (function(){
+            var r = localStorage.getItem('role');
+            if (!r) { window.location.replace('index.html'); }
+            if (r === 'viewer') { window.location.replace('news.html'); }
+        })();
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @font-face { font-family:'basis33'; src:url('basis33.ttf') format('truetype'); }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body {
+            height:100vh; display:flex; justify-content:center; align-items:center;
+            font-family:'basis33',sans-serif; overflow:hidden;
+            background-color:#0f141c; position:relative;
+            opacity:0; transition:opacity 0.4s ease;
+        }
+        body.loaded { opacity:1; }
+        body::before {
+            content:""; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:url('f.png') no-repeat center center fixed;
+            background-size:cover; filter:blur(10px); transform:scale(1.05); z-index:-1;
+        }
+        .top-nav-zone { position:fixed; top:0; left:0; width:100%; height:50px; z-index:9999; }
+        .navbar-container {
+            position:fixed; top:-160px; left:50%; transform:translateX(-50%);
+            width:940px; padding:20px 35px; border-radius:0 0 60px 60px;
+            background:linear-gradient(160deg,rgba(255,255,255,0.14) 0%,rgba(255,255,255,0.05) 45%,rgba(255,255,255,0.01) 100%);
+            backdrop-filter:blur(14px) saturate(1.5); -webkit-backdrop-filter:blur(14px) saturate(1.5);
+            border:1px solid rgba(255,255,255,0.18); border-top:none;
+            box-shadow:0 24px 50px rgba(0,0,0,0.38),inset 0 1px 0 rgba(255,255,255,0.22);
+            transition:top 0.45s cubic-bezier(0.175,0.885,0.32,1.12); z-index:10000;
+        }
+        .top-nav-zone:hover + .navbar-container, .navbar-container:hover { top:0; }
+        .navbar-inner {
+            background:#00969d; border-radius:48px; display:flex; align-items:center;
+            justify-content:space-between; padding:10px 25px; width:100%;
+            box-shadow:inset 0 3px 6px rgba(0,0,0,0.3);
+        }
+        .nav-item {
+            display:flex; align-items:center; justify-content:center;
+            width:62px; height:62px; border-radius:50%; cursor:pointer;
+            color:rgba(255,255,255,0.75);
+            transition:background 0.28s,border-color 0.28s,box-shadow 0.28s,transform 0.3s cubic-bezier(0.34,1.5,0.64,1);
+            border:1px solid transparent; background:transparent; text-decoration:none;
+        }
+        .nav-item svg { width:28px; height:28px; display:block; transition:filter 0.28s,color 0.28s; }
+        .nav-spacer { flex-shrink:0; width:320px; height:62px; background:#007c85; border-radius:35px; box-shadow:inset 0 3px 6px rgba(0,0,0,0.25); }
+        .nav-item:hover,.nav-item.active {
+            background:linear-gradient(145deg,rgba(255,255,255,0.30),rgba(255,255,255,0.08));
+            backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.38);
+            box-shadow:inset 0 1px 0 rgba(255,255,255,0.40),0 6px 16px rgba(0,0,0,0.20);
+            transform:scale(1.06); color:#fff;
+        }
+        .nav-item:hover svg,.nav-item.active svg { color:#fff; filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 12px rgba(255,255,255,0.9)); }
+
+        /* ── Карточка ────────────────────────────────── */
+        .feed-card {
+            position:relative; z-index:10;
+            background:linear-gradient(145deg,rgba(255,255,255,0.10) 0%,rgba(255,255,255,0.04) 50%,rgba(255,255,255,0.01) 100%);
+            backdrop-filter:blur(14px) saturate(1.5); -webkit-backdrop-filter:blur(14px) saturate(1.5);
+            border:1px solid rgba(255,255,255,0.18); border-radius:80px; padding:45px 70px;
+            box-shadow:0 32px 70px rgba(0,0,0,0.38),inset 0 1px 0 rgba(255,255,255,0.24);
+            display:flex; flex-direction:column; width:1180px; max-width:95%;
+            height:93vh; max-height:940px;
+            animation:cardIn 0.5s cubic-bezier(0.34,1.2,0.64,1) both; animation-delay:0.15s;
+        }
+        @keyframes cardIn { from{opacity:0;transform:translateY(18px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+        .feed-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:25px; flex-shrink:0; }
+        .feed-title { font-size:32px; color:#fff; letter-spacing:1px; text-transform:uppercase; font-weight:normal; }
+        .back-btn {
+            background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.22);
+            border-radius:30px; padding:8px 22px; cursor:pointer;
+            font-family:'basis33',monospace; font-size:16px; color:rgba(255,255,255,0.75);
+            letter-spacing:1px; text-decoration:none;
+            transition:background 0.25s,color 0.25s;
+        }
+        .back-btn:hover { background:rgba(255,255,255,0.20); color:#fff; }
+
+        .feed-container { display:flex; flex-direction:column; gap:35px; overflow-y:auto; width:100%; height:100%; padding-right:15px; scroll-behavior:smooth; }
+        .feed-container::-webkit-scrollbar { width:6px; }
+        .feed-container::-webkit-scrollbar-thumb { background:rgba(0,150,157,0.4); border-radius:10px; }
+        .feed-container::-webkit-scrollbar-thumb:hover { background:rgba(0,150,157,0.65); }
+
+        .loading { text-align:center; padding:60px 0; font-family:'basis33',monospace; font-size:22px; color:rgba(255,255,255,0.5); letter-spacing:2px; }
+        .empty { text-align:center; padding:60px 0; font-family:'basis33',monospace; font-size:20px; color:rgba(255,255,255,0.4); letter-spacing:1px; text-transform:uppercase; line-height:1.8; }
+
+        /* ── Пост ────────────────────────────────────── */
+        .post-item { display:flex; flex-direction:column; width:100%; }
+        .post-text-row { display:flex; align-items:flex-start; gap:8px; font-size:24px; color:#fff; line-height:1.3; margin-bottom:20px; }
+        .post-date-prefix { white-space:nowrap; color:#fff; user-select:none; }
+        .post-actual-text { flex:1; word-wrap:break-word; }
+
+        .post-media-group { display:flex; justify-content:center; gap:24px; width:100%; margin-bottom:14px; flex-wrap:wrap; }
+        .media-box {
+            background:#fff; color:#000; font-family:'Press Start 2P',monospace;
+            font-size:44px; font-weight:bold; width:280px; height:140px; border-radius:32px;
+            display:flex; align-items:center; justify-content:center;
+            box-shadow:0 4px 14px rgba(0,0,0,0.15); position:relative; overflow:hidden;
+            transition:transform 0.25s cubic-bezier(0.34,1.5,0.64,1),box-shadow 0.25s;
+        }
+        .media-box:hover { transform:scale(1.04) translateY(-2px); box-shadow:0 10px 28px rgba(0,0,0,0.22),0 0 20px rgba(0,150,157,0.30); }
+        .media-box img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:32px; cursor:pointer; }
+        .media-box iframe { position:absolute; inset:0; width:100%; height:100%; border:none; border-radius:32px; }
+
+        /* ── Действия ────────────────────────────────── */
+        .post-actions { display:flex; align-items:center; gap:12px; margin-top:4px; flex-wrap:wrap; }
+        .action-btn {
+            display:flex; align-items:center; gap:7px;
+            background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+            border-radius:30px; padding:7px 16px; cursor:pointer;
+            font-family:'basis33',monospace; font-size:18px; color:rgba(255,255,255,0.75);
+            transition:all 0.22s; user-select:none;
+        }
+        .action-btn svg { width:18px; height:18px; flex-shrink:0; }
+        .action-btn:hover { background:rgba(255,255,255,0.16); color:#fff; }
+
+        /* ── Кнопки управления постом ────────────────── */
+        .post-manage { display:flex; gap:10px; margin-left:auto; }
+        .edit-btn {
+            background:rgba(0,150,157,0.22); border:1px solid rgba(0,150,157,0.45);
+            border-radius:30px; padding:7px 18px; cursor:pointer;
+            font-family:'basis33',monospace; font-size:16px; color:#00d4dc;
+            transition:all 0.22s; text-decoration:none;
+        }
+        .edit-btn:hover { background:rgba(0,150,157,0.38); }
+        .edit-btn.disabled { opacity:0.35; cursor:not-allowed; pointer-events:none; }
+        .delete-btn {
+            background:rgba(220,60,60,0.18); border:1px solid rgba(220,60,60,0.38);
+            border-radius:30px; padding:7px 18px; cursor:pointer;
+            font-family:'basis33',monospace; font-size:16px; color:rgba(255,100,100,0.85);
+            transition:all 0.22s;
+        }
+        .delete-btn:hover { background:rgba(220,60,60,0.32); color:#ff6060; }
+        .delete-btn.disabled { opacity:0.35; cursor:not-allowed; pointer-events:none; }
+
+        .post-time { font-family:'basis33',monospace; font-size:15px; color:rgba(255,255,255,0.35); }
+        .post-divider { width:100%; height:1px; background:rgba(255,255,255,0.08); margin-top:8px; }
+
+        /* ── Подтверждение удаления ──────────────────── */
+        .confirm-overlay {
+            position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.55);
+            display:none; align-items:center; justify-content:center;
+        }
+        .confirm-overlay.show { display:flex; }
+        .confirm-box {
+            background:linear-gradient(145deg,rgba(20,30,45,0.97),rgba(15,20,30,0.99));
+            border:1px solid rgba(255,255,255,0.15); border-radius:48px; padding:44px 60px;
+            text-align:center; box-shadow:0 24px 60px rgba(0,0,0,0.6);
+            animation:cardIn 0.3s cubic-bezier(0.34,1.2,0.64,1) both;
+        }
+        .confirm-title { font-family:'basis33',monospace; font-size:24px; color:#fff; letter-spacing:2px; text-transform:uppercase; margin-bottom:14px; }
+        .confirm-text { font-family:'basis33',monospace; font-size:18px; color:rgba(255,255,255,0.6); letter-spacing:1px; margin-bottom:32px; line-height:1.6; }
+        .confirm-btns { display:flex; gap:16px; justify-content:center; }
+        .confirm-yes { background:rgba(220,60,60,0.8); border:none; border-radius:30px; padding:12px 36px; font-family:'basis33',monospace; font-size:18px; color:#fff; cursor:pointer; letter-spacing:1px; text-transform:uppercase; transition:background 0.22s; }
+        .confirm-yes:hover { background:rgba(220,60,60,1); }
+        .confirm-no { background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); border-radius:30px; padding:12px 36px; font-family:'basis33',monospace; font-size:18px; color:#fff; cursor:pointer; letter-spacing:1px; text-transform:uppercase; transition:background 0.22s; }
+        .confirm-no:hover { background:rgba(255,255,255,0.22); }
+    </style>
+</head>
+<body>
+    <!-- Подтверждение удаления -->
+    <div class="confirm-overlay" id="confirmOverlay">
+        <div class="confirm-box">
+            <div class="confirm-title">Удалить историю?</div>
+            <div class="confirm-text">Это действие нельзя отменить</div>
+            <div class="confirm-btns">
+                <button class="confirm-yes" id="confirmYes">Удалить</button>
+                <button class="confirm-no" onclick="closeConfirm()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="top-nav-zone"></div>
+    <div class="navbar-container">
+        <div class="navbar-inner">
+            <a href="search.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></a>
+            <a href="news.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></a>
+            <div class="nav-spacer"></div>
+            <a href="create.html" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></a>
+            <a href="profile.html" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></a>
+        </div>
+    </div>
+
+    <div class="feed-card">
+        <div class="feed-header">
+            <h2 class="feed-title">Мои истории</h2>
+            <a href="profile.html" class="back-btn">← Профиль</a>
+        </div>
+        <div class="feed-container" id="feedContainer">
+            <div class="loading">Загрузка...</div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        const user = getCurrentUser();
+        let deleteTargetId = null;
+
+        window.addEventListener('load', async () => {
+            requestAnimationFrame(() => document.body.classList.add('loaded'));
+            if (!user) { goTo('index.html'); return; }
+            await loadMyStories();
+        });
+
+        async function loadMyStories() {
+            const container = document.getElementById('feedContainer');
+            try {
+                const posts = await sbSelect('posts',
+                    `author_id=eq.${user.id}&order=created_at.desc&select=id,date,text,video_url,created_at`
+                );
+                const photos = posts.length
+                    ? await sbSelect('photos', `post_id=in.(${posts.map(p=>p.id).join(',')})&select=post_id,url`)
+                    : [];
+                const likes = posts.length
+                    ? await sbSelect('likes', `post_id=in.(${posts.map(p=>p.id).join(',')})&select=post_id,type`)
+                    : [];
+
+                if (posts.length === 0) {
+                    container.innerHTML = '<div class="empty">У вас пока нет историй<br>Нажмите + чтобы создать</div>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                posts.forEach((post, idx) => {
+                    const postPhotos  = photos.filter(ph => ph.post_id === post.id).map(ph => ph.url);
+                    const postLikes   = likes.filter(l => l.post_id === post.id && l.type === 'like').length;
+                    const postDislikes= likes.filter(l => l.post_id === post.id && l.type === 'dislike').length;
+
+                    // Проверка 3 часов
+                    const age      = Date.now() - new Date(post.created_at).getTime();
+                    const canEdit  = age < 3 * 60 * 60 * 1000;
+                    const timeLeft = canEdit ? formatTimeLeft(3 * 60 * 60 * 1000 - age) : null;
+
+                    const photosHTML = postPhotos.map(url =>
+                        `<div class="media-box"><img src="${url}" alt="фото" onclick="window.open('${url}','_blank')"></div>`
+                    ).join('');
+                    const videoHTML = post.video_url
+                        ? `<div class="media-box"><iframe src="https://www.youtube.com/embed/${extractYTId(post.video_url)}" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`
+                        : '';
+                    const mediaHTML = (photosHTML || videoHTML)
+                        ? `<div class="post-media-group">${photosHTML}${videoHTML}</div>` : '';
+
+                    const div = document.createElement('div');
+                    div.className = 'post-item';
+                    div.innerHTML = `
+                        <div class="post-text-row">
+                            <span class="post-date-prefix">${escHtml(post.date)} |</span>
+                            <span class="post-actual-text">${escHtml(post.text || '')}</span>
+                        </div>
+                        ${mediaHTML}
+                        <div class="post-actions">
+                            <div class="action-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                                ${postLikes}
+                            </div>
+                            <div class="action-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+                                ${postDislikes}
+                            </div>
+                            <span class="post-time">${timeAgo(post.created_at)}</span>
+                            <div class="post-manage">
+                                <a href="create.html?edit=${post.id}" class="edit-btn ${canEdit?'':'disabled'}"
+                                   title="${canEdit ? 'Редактировать (ещё ' + timeLeft + ')' : 'Редактирование закрыто (прошло более 3 часов)'}">
+                                   ✏ Изменить
+                                </a>
+                                <button class="delete-btn ${canEdit?'':'disabled'}"
+                                    onclick="${canEdit ? `confirmDelete('${post.id}')` : 'void(0)'}"
+                                    title="${canEdit ? 'Удалить' : 'Удаление закрыто (прошло более 3 часов)'}">
+                                    ✕ Удалить
+                                </button>
+                            </div>
+                        </div>
+                        ${idx < posts.length - 1 ? '<div class="post-divider"></div>' : ''}
+                    `;
+                    container.appendChild(div);
+                });
+            } catch(e) {
+                container.innerHTML = '<div class="empty">Ошибка загрузки</div>';
+                console.error(e);
+            }
+        }
+
+        // ── Удаление ──────────────────────────────────
+        function confirmDelete(postId) {
+            deleteTargetId = postId;
+            document.getElementById('confirmOverlay').classList.add('show');
+            document.getElementById('confirmYes').onclick = () => deletePost(postId);
+        }
+        function closeConfirm() {
+            document.getElementById('confirmOverlay').classList.remove('show');
+            deleteTargetId = null;
+        }
+        async function deletePost(postId) {
+            closeConfirm();
+            try {
+                await sbDelete('posts', `id=eq.${postId}`);
+                await loadMyStories();
+            } catch(e) { console.error(e); }
+        }
+
+        function formatTimeLeft(ms) {
+            const h = Math.floor(ms / 3600000);
+            const m = Math.floor((ms % 3600000) / 60000);
+            return h > 0 ? `${h}ч ${m}м` : `${m}м`;
+        }
+        function extractYTId(url) {
+            try {
+                const u = new URL(url);
+                if (u.hostname.includes('youtu.be')) return u.pathname.slice(1).split('?')[0];
+                return u.searchParams.get('v') || '';
+            } catch { return /^[\w-]{11}$/.test(url) ? url : ''; }
+        }
+        function escHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+        document.querySelectorAll('a[href]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                if (href && !href.startsWith('#') && !href.startsWith('http') && !href.startsWith('mailto')) {
+                    e.preventDefault(); goTo(href);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
