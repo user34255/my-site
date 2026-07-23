@@ -405,36 +405,63 @@
             const val = document.querySelector('.key-input').value.trim().toUpperCase();
             if (!val) return;
 
-            const input = document.querySelector('.key-input');
-            input.disabled = true;
-            input.style.opacity = '0.6';
+            const input   = document.querySelector('.key-input');
+            const arrowBtn = document.querySelector('.arrow-btn');
+            input.disabled    = true;
+            arrowBtn.disabled = true;
+            input.style.opacity = '0.7';
+
+            function showError(msg) {
+                input.disabled    = false;
+                arrowBtn.disabled = false;
+                input.style.opacity  = '1';
+                input.style.transition = 'box-shadow 0.15s ease, color 0.15s ease';
+                input.style.boxShadow  = '0 0 0 3px rgba(220,60,60,0.55), inset 0 4px 8px rgba(0,0,0,0.2)';
+                input.style.color = '#c0392b';
+                input.value = '';
+                input.placeholder = msg;
+                setTimeout(() => {
+                    input.style.boxShadow = '';
+                    input.style.color = '#00878f';
+                    input.placeholder = 'ВВЕДИТЕ КЛЮЧ';
+                }, 2000);
+            }
 
             try {
-                const users = await sbSelect('users', 'access_key=eq.' + encodeURIComponent(val) + '&select=id,nickname,avatar_url');
-                if (users.length > 0) {
-                    const user = users[0];
+                // Прямой fetch — без промежуточных обёрток
+                const url = CONFIG.supabase.url
+                    + '/rest/v1/users?access_key=eq.'
+                    + encodeURIComponent(val)
+                    + '&select=id,nickname,avatar_url';
+
+                const res = await fetch(url, {
+                    headers: {
+                        'apikey':        CONFIG.supabase.anon,
+                        'Authorization': 'Bearer ' + CONFIG.supabase.anon
+                    }
+                });
+
+                if (!res.ok) {
+                    const errText = await res.text();
+                    console.error('Supabase error:', res.status, errText);
+                    showError('ОШИБКА БД ' + res.status);
+                    return;
+                }
+
+                const users = await res.json();
+                console.log('DB response:', users);
+
+                if (users && users.length > 0) {
                     localStorage.setItem('role', 'member');
-                    localStorage.setItem('user', JSON.stringify(user));
+                    localStorage.setItem('user', JSON.stringify(users[0]));
                     goTo('news.html');
                 } else {
-                    // Неверный ключ
-                    input.disabled = false;
-                    input.style.opacity = '1';
-                    input.style.transition = 'box-shadow 0.15s ease, color 0.15s ease';
-                    input.style.boxShadow = '0 0 0 3px rgba(220,60,60,0.45), inset 0 4px 8px rgba(0,0,0,0.2)';
-                    input.style.color = '#c0392b';
-                    input.value = '';
-                    input.placeholder = 'НЕВЕРНЫЙ КЛЮЧ';
-                    setTimeout(() => {
-                        input.style.boxShadow = '';
-                        input.style.color = '#00878f';
-                        input.placeholder = 'ВВЕДИТЕ КЛЮЧ';
-                    }, 1500);
+                    showError('НЕВЕРНЫЙ КЛЮЧ');
                 }
+
             } catch(e) {
-                input.disabled = false;
-                input.style.opacity = '1';
-                console.error(e);
+                console.error('Network error:', e);
+                showError('НЕТ СВЯЗИ');
             }
         }
 
