@@ -2,7 +2,7 @@
 const CONFIG = {
     supabase: {
         url:  'https://itojilitujiabyigwnda.supabase.co',
-        anon: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0b2psaXR1amlhYnlpZ3duZGEiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4NDMxNjAyNiwiZXhwIjoyMDk5ODkyMDI2fQ.kRSV1fvB88HGBxEdmCfi9af6t1uwLmPHFG9tjYk_sZY'
+        anon: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0b2ppbGl0dWppYWJ5aWd3bmRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTYwMjYsImV4cCI6MjA5OTg5MjAyNn0.kRSV1fvB88HGBxEdmCfi9af6t1uwLmPHFG9tjYk_sZY'
     },
     imagekit: {
         endpoint:  'https://ik.imagekit.io/4fsc9mrry',
