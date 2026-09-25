@@ -341,6 +341,9 @@
 
         .spectator-btn:active { transform: translateY(0); }
     </style>
+    
+    <!-- Подключаем Supabase SDK (обязательно перед твоим config.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -377,8 +380,10 @@
         <button class="spectator-btn">Я зритель</button>
     </div>
 
+    <!-- Твой файл с конфигурацией (где теперь есть db и verifyAccessKey) -->
     <script src="config.js"></script>
-<script>
+
+    <script>
         window.addEventListener('load', () => {
             requestAnimationFrame(() => document.body.classList.add('loaded'));
         });
@@ -400,75 +405,64 @@
             goTo('news.html');
         });
 
-        // ── Ввод ключа доступа (проверка через БД) ────────
+        // ── Ввод ключа доступа (обновленная логика) ───────
         async function submitKey() {
-            const val = document.querySelector('.key-input').value.trim().toUpperCase();
+            // Получаем значение из инпута
+            let val = document.querySelector('.key-input').value.trim();
+            // Если в твоей БД ключи хранятся в верхнем регистре, раскомментируй следующую строку:
+            // val = val.toUpperCase(); 
+            
             if (!val) return;
 
-            const input   = document.querySelector('.key-input');
-            const arrowBtn = document.querySelector('.arrow-btn');
-            input.disabled    = true;
-            arrowBtn.disabled = true;
-            input.style.opacity = '0.7';
+            const input = document.querySelector('.key-input');
+            
+            // Визуально блокируем инпут на время запроса
+            input.disabled = true;
+            input.style.opacity = '0.6';
 
-            function showError(msg) {
-                input.disabled    = false;
-                arrowBtn.disabled = false;
-                input.style.opacity  = '1';
+            try {
+                // ИСПОЛЬЗУЕМ КЛИЕНТ SUPABASE НАПРЯМУЮ, как в config.js
+                const { data, error } = await db
+                    .from('users')
+                    .select('id, nickname, avatar_url') // Берем нужные поля
+                    .eq('access_key', val)
+                    .single();
+
+                if (error || !data) {
+                    // ЕСЛИ КЛЮЧ НЕ НАЙДЕН
+                    throw new Error("Invalid key");
+                }
+
+                // ЕСЛИ КЛЮЧ УСПЕШНО НАЙДЕН
+                localStorage.setItem('role', 'creator'); // Выдаем права (раньше было 'member')
+                localStorage.setItem('user', JSON.stringify(data)); // Сохраняем данные юзера
+                goTo('news.html'); // Отправляем на нужную страницу
+
+            } catch(e) {
+                // ОБРАБОТКА ОШИБКИ (Возвращаем инпут в норму и показываем красное свечение)
+                console.error("Ошибка при проверке ключа:", e);
+                input.disabled = false;
+                input.style.opacity = '1';
                 input.style.transition = 'box-shadow 0.15s ease, color 0.15s ease';
-                input.style.boxShadow  = '0 0 0 3px rgba(220,60,60,0.55), inset 0 4px 8px rgba(0,0,0,0.2)';
+                input.style.boxShadow = '0 0 0 3px rgba(220,60,60,0.45), inset 0 4px 8px rgba(0,0,0,0.2)';
                 input.style.color = '#c0392b';
                 input.value = '';
-                input.placeholder = msg;
+                input.placeholder = 'НЕВЕРНЫЙ КЛЮЧ';
+                
+                // Через 1.5 секунды возвращаем обычный вид
                 setTimeout(() => {
                     input.style.boxShadow = '';
                     input.style.color = '#00878f';
                     input.placeholder = 'ВВЕДИТЕ КЛЮЧ';
-                }, 2000);
-            }
-
-            try {
-                // Прямой fetch — без промежуточных обёрток
-                const url = CONFIG.supabase.url
-                    + '/rest/v1/users?access_key=eq.'
-                    + encodeURIComponent(val)
-                    + '&select=id,nickname,avatar_url';
-
-                const res = await fetch(url, {
-                    headers: {
-                        'apikey':        CONFIG.supabase.anon,
-                        'Authorization': 'Bearer ' + CONFIG.supabase.anon
-                    }
-                });
-
-                if (!res.ok) {
-                    const errText = await res.text();
-                    console.error('Supabase error:', res.status, errText);
-                    showError('ОШИБКА БД ' + res.status);
-                    return;
-                }
-
-                const users = await res.json();
-                console.log('DB response:', users);
-
-                if (users && users.length > 0) {
-                    localStorage.setItem('role', 'member');
-                    localStorage.setItem('user', JSON.stringify(users[0]));
-                    goTo('news.html');
-                } else {
-                    showError('НЕВЕРНЫЙ КЛЮЧ');
-                }
-
-            } catch(e) {
-                console.error('Network error:', e);
-                showError('НЕТ СВЯЗИ');
+                }, 1500);
             }
         }
 
+        // Привязываем функцию к кнопке и к Enter
         document.querySelector('.arrow-btn').addEventListener('click', submitKey);
         document.querySelector('.key-input').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') submitKey();
         });
-</script>
+    </script>
 </body>
 </html>
