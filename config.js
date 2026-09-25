@@ -1,90 +1,53 @@
-// ── Ключи ─────────────────────────────────────────────
-const CONFIG = {
-    supabase: {
-        url:  'https://itojilitujiabyigwnda.supabase.co',
-        anon: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0b2ppbGl0dWppYWJ5aWd3bmRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTYwMjYsImV4cCI6MjA5OTg5MjAyNn0.kRSV1fvB88HGBxEdmCfi9af6t1uwLmPHFG9tjYk_sZY'
-    },
-    imagekit: {
-        endpoint:  'https://ik.imagekit.io/4fsc9mrry',
-        publicKey: 'public_SHUz6tu8gp5OvHHNoN/4J03ccWU='
-    }
-};
+// ── Supabase SDK ────────────────────────────────────────
+const SUPA_URL  = 'https://itojlitujiabyigwnda.supabase.co';
+const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0b2ppbGl0dWppYWJ5aWd3bmRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTYwMjYsImV4cCI6MjA5OTg5MjAyNn0.kRSV1fvB88HGBxEdmCfi9af6t1uwLmPHFG9tjYk_sZY';
+const IK_ENDPOINT = 'https://ik.imagekit.io/4fsc9mrry';
 
-// ── Прямые fetch-запросы к Supabase REST API ──────────
-// Никакого SDK — только встроенный fetch браузера
+// Принудительно делаем db глобальной переменной, чтобы index.html её точно увидел
+window.db = supabase.createClient(SUPA_URL, SUPA_ANON);
+const db = window.db; // Сохраняем локальную ссылку для функций ниже
 
-async function sbFetch(path, options = {}) {
-    const url = CONFIG.supabase.url + '/rest/v1/' + path;
-    const headers = {
-        'apikey':        CONFIG.supabase.anon,
-        'Authorization': 'Bearer ' + CONFIG.supabase.anon,
-        'Content-Type':  'application/json',
-        'Prefer':        options.prefer !== undefined ? options.prefer : 'return=representation'
-    };
-    const res = await fetch(url, {
-        method:  options.method  || 'GET',
-        headers: headers,
-        body:    options.body    || undefined
-    });
-    if (!res.ok) {
-        const txt = await res.text();
-        throw new Error('HTTP ' + res.status + ': ' + txt);
-    }
-    const txt = await res.text();
-    return txt ? JSON.parse(txt) : [];
+// ── Текущий пользователь ────────────────────────────────
+function getCurrentUser() {
+    const raw = localStorage.getItem('user');
+    return raw ? JSON.parse(raw) : null;
 }
 
-function sbSelect(table, query) {
-    return sbFetch(table + (query ? '?' + query : ''));
+function getRole() {
+    return localStorage.getItem('role');
 }
 
-function sbInsert(table, data) {
-    return sbFetch(table, { method: 'POST', body: JSON.stringify(data) });
+// ── Плавный переход ─────────────────────────────────────
+function goTo(page) {
+    document.body.style.transition = 'opacity 0.3s ease';
+    document.body.style.opacity = '0';
+    setTimeout(() => { window.location.href = page; }, 310);
 }
 
-function sbUpdate(table, query, data) {
-    return sbFetch(table + '?' + query, { method: 'PATCH', body: JSON.stringify(data) });
+// ── Время назад ─────────────────────────────────────────
+function timeAgo(dateStr) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1)  return 'только что';
+    if (m < 60) return m + ' мин. назад';
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + ' ч. назад';
+    return Math.floor(h / 24) + ' дн. назад';
 }
 
-function sbDelete(table, query) {
-    return sbFetch(table + '?' + query, { method: 'DELETE', prefer: '' });
-}
-
-// ── Загрузка фото в Supabase Storage ─────────────────
-async function uploadPhotoToStorage(file, folder) {
-    folder = folder || 'posts';
-    const user     = getCurrentUser();
-    const compressed = await compressImage(file, 1200);
-    const fileName = folder + '/' + (user ? user.id + '_' : '') + Date.now() + '.jpg';
-    const url      = CONFIG.supabase.url + '/storage/v1/object/photos/' + fileName;
-    const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Authorization': 'Bearer ' + CONFIG.supabase.anon,
-            'apikey':        CONFIG.supabase.anon,
-            'Content-Type':  'image/jpeg',
-            'x-upsert':      'true'
-        },
-        body: compressed
-    });
-    if (!res.ok) throw new Error('Storage upload failed: ' + await res.text());
-    return CONFIG.supabase.url + '/storage/v1/object/public/photos/' + fileName;
-}
-
-// ── Сжатие изображения ────────────────────────────────
-function compressImage(file, maxWidth) {
-    maxWidth = maxWidth || 800;
-    return new Promise(function(resolve) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            var img = new Image();
-            img.onload = function() {
-                var w = img.width, h = img.height;
+// ── Сжатие изображения ──────────────────────────────────
+function compressImage(file, maxWidth = 1200) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let w = img.width, h = img.height;
                 if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
-                var canvas = document.createElement('canvas');
                 canvas.width = w; canvas.height = h;
                 canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                canvas.toBlob(resolve, 'image/jpeg', 0.82);
+                canvas.toBlob(blob => resolve(new File([blob], file.name, { type: 'image/jpeg' })), 'image/jpeg', 0.85);
             };
             img.src = e.target.result;
         };
@@ -92,26 +55,33 @@ function compressImage(file, maxWidth) {
     });
 }
 
-// ── Текущий пользователь ──────────────────────────────
-function getCurrentUser() {
-    var raw = localStorage.getItem('user');
-    return raw ? JSON.parse(raw) : null;
+// ── Загрузка фото в Supabase Storage ───────────────────
+async function uploadPhoto(file) {
+    const compressed = await compressImage(file);
+    const ext  = 'jpg';
+    const name = `photo_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { data, error } = await db.storage.from('photos').upload(name, compressed, { contentType: 'image/jpeg', upsert: false });
+    if (error) throw error;
+    const { data: urlData } = db.storage.from('photos').getPublicUrl(name);
+    return urlData.publicUrl;
 }
 
-// ── Плавный переход ───────────────────────────────────
-function goTo(page) {
-    document.body.style.transition = 'opacity 0.3s ease';
-    document.body.style.opacity    = '0';
-    setTimeout(function() { window.location.href = page; }, 310);
-}
+// ── Аватар по умолчанию (SVG data URI) ─────────────────
+const DEFAULT_AVATAR = `data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%2300969d' stroke-width='2' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpolyline points='21 15 16 10 5 21'/%3E%3C/svg%3E`;
 
-// ── Время «N минут назад» ─────────────────────────────
-function timeAgo(dateStr) {
-    var diff = Date.now() - new Date(dateStr).getTime();
-    var m = Math.floor(diff / 60000);
-    if (m < 1)  return 'только что';
-    if (m < 60) return m + ' мин. назад';
-    var h = Math.floor(m / 60);
-    if (h < 24) return h + ' ч. назад';
-    return Math.floor(h / 24) + ' дн. назад';
+// ── Навигация: перехватить все ссылки ──────────────────
+function initNavLinks() {
+    document.querySelectorAll('a[href]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto')) return;
+            if (href === 'create.html' && getRole() === 'viewer') {
+                e.preventDefault();
+                if (typeof openKeyPopup === 'function') openKeyPopup();
+                return;
+            }
+            e.preventDefault();
+            goTo(href);
+        });
+    });
 }
