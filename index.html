@@ -342,7 +342,7 @@
         .spectator-btn:active { transform: translateY(0); }
     </style>
     
-    <!-- Подключаем Supabase SDK (обязательно перед твоим config.js) -->
+    <!-- Подключаем Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -350,6 +350,7 @@
     <div class="top-nav-zone"></div>
 
     <div class="navbar-container">
+        <!-- ... Навигация (без изменений) ... -->
         <div class="navbar-inner">
             <div class="nav-item active">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -357,13 +358,10 @@
             <div class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></svg>
             </div>
-
             <div class="nav-spacer"></div>
-
             <div class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
             </div>
-
             <a href="profile.html" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
             </a>
@@ -380,7 +378,7 @@
         <button class="spectator-btn">Я зритель</button>
     </div>
 
-    <!-- Твой файл с конфигурацией (где теперь есть db и verifyAccessKey) -->
+    <!-- Твой файл с конфигурацией -->
     <script src="config.js"></script>
 
     <script>
@@ -407,10 +405,10 @@
 
         // ── Ввод ключа доступа (обновленная логика) ───────
         async function submitKey() {
-            // Получаем значение из инпута
             let val = document.querySelector('.key-input').value.trim();
-            // Если в твоей БД ключи хранятся в верхнем регистре, раскомментируй следующую строку:
-            // val = val.toUpperCase(); 
+            
+            // Принудительно делаем все буквы заглавными перед отправкой
+            val = val.toUpperCase(); 
             
             if (!val) return;
 
@@ -421,25 +419,26 @@
             input.style.opacity = '0.6';
 
             try {
-                // ИСПОЛЬЗУЕМ КЛИЕНТ SUPABASE НАПРЯМУЮ, как в config.js
+                // ИСПОЛЬЗУЕМ КЛИЕНТ SUPABASE
                 const { data, error } = await db
                     .from('users')
-                    .select('id, nickname, avatar_url') // Берем нужные поля
+                    .select('id, nickname, avatar_url')
                     .eq('access_key', val)
                     .single();
 
                 if (error || !data) {
-                    // ЕСЛИ КЛЮЧ НЕ НАЙДЕН
                     throw new Error("Invalid key");
                 }
 
-                // ЕСЛИ КЛЮЧ УСПЕШНО НАЙДЕН
-                localStorage.setItem('role', 'creator'); // Выдаем права (раньше было 'member')
-                localStorage.setItem('user', JSON.stringify(data)); // Сохраняем данные юзера
-                goTo('news.html'); // Отправляем на нужную страницу
+                localStorage.setItem('role', 'creator');
+                localStorage.setItem('user', JSON.stringify(data));
+                goTo('news.html');
 
             } catch(e) {
-                // ОБРАБОТКА ОШИБКИ (Возвращаем инпут в норму и показываем красное свечение)
+                // === ВОТ ТОТ САМЫЙ ALERT ===
+                // Он покажет на экране телефона реальную причину ошибки
+                alert("Скрытая ошибка: " + e.message);
+                
                 console.error("Ошибка при проверке ключа:", e);
                 input.disabled = false;
                 input.style.opacity = '1';
@@ -449,7 +448,6 @@
                 input.value = '';
                 input.placeholder = 'НЕВЕРНЫЙ КЛЮЧ';
                 
-                // Через 1.5 секунды возвращаем обычный вид
                 setTimeout(() => {
                     input.style.boxShadow = '';
                     input.style.color = '#00878f';
@@ -458,7 +456,6 @@
             }
         }
 
-        // Привязываем функцию к кнопке и к Enter
         document.querySelector('.arrow-btn').addEventListener('click', submitKey);
         document.querySelector('.key-input').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') submitKey();
