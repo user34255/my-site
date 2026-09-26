@@ -1,5 +1,5 @@
 // ── Supabase SDK ────────────────────────────────────────
-const SUPA_URL  = 'https://itojlitujiabyigwnda.supabase.co';
+const SUPA_URL  = 'https://itojilitujiabyigwnda.supabase.co';
 const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0b2ppbGl0dWppYWJ5aWd3bmRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTYwMjYsImV4cCI6MjA5OTg5MjAyNn0.kRSV1fvB88HGBxEdmCfi9af6t1uwLmPHFG9tjYk_sZY';
 const IK_ENDPOINT = 'https://ik.imagekit.io/4fsc9mrry';
 
