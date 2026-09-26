@@ -386,6 +386,13 @@
             requestAnimationFrame(() => document.body.classList.add('loaded'));
         });
 
+        function goTo(url) {
+            document.body.style.opacity = '0';
+            setTimeout(() => {
+                window.location.href = url;
+            }, 400);
+        }
+
         document.querySelectorAll('a[href]').forEach(link => {
             link.addEventListener('click', function(e) {
                 const href = this.getAttribute('href');
@@ -406,38 +413,39 @@
         // ── Ввод ключа доступа (обновленная логика) ───────
         async function submitKey() {
             let val = document.querySelector('.key-input').value.trim();
-            
-            // Принудительно делаем все буквы заглавными перед отправкой
             val = val.toUpperCase(); 
             
             if (!val) return;
 
             const input = document.querySelector('.key-input');
-            
-            // Визуально блокируем инпут на время запроса
             input.disabled = true;
             input.style.opacity = '0.6';
 
             try {
-                // ИСПОЛЬЗУЕМ КЛИЕНТ SUPABASE
                 const { data, error } = await db
                     .from('users')
                     .select('id, nickname, avatar_url')
                     .eq('access_key', val)
                     .single();
 
-                if (error || !data) {
-                    throw new Error("Invalid key");
+                // 1. Если база данных вернула системную ошибку (например PGRST116 - не найдено):
+                if (error) {
+                    throw new Error("DB_ERROR: " + error.message + " (Код: " + error.code + ")");
                 }
 
+                // 2. Если ошибки нет, но данные пустые:
+                if (!data) {
+                    throw new Error("EMPTY_DATA: База ответила, но не нашла совпадений");
+                }
+
+                // Если всё отлично, сохраняем и переходим
                 localStorage.setItem('role', 'creator');
                 localStorage.setItem('user', JSON.stringify(data));
                 goTo('news.html');
 
             } catch(e) {
-                // === ВОТ ТОТ САМЫЙ ALERT ===
-                // Он покажет на экране телефона реальную причину ошибки
-                alert("Скрытая ошибка: " + e.message);
+                // Выводим сам ключ, который ищем, и РЕАЛЬНУЮ ошибку
+                alert("Ищем ключ: [" + val + "]\n\n" + e.message);
                 
                 console.error("Ошибка при проверке ключа:", e);
                 input.disabled = false;
