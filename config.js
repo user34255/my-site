@@ -1,101 +1,72 @@
-// ── Supabase SDK ────────────────────────────────────────
-const SUPA_URL  = 'https://itojilitujiabyigwnda.supabase.co';
-const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0b2ppbGl0dWppYWJ5aWd3bmRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTYwMjYsImV4cCI6MjA5OTg5MjAyNn0.kRSV1fvB88HGBxEdmCfi9af6t1uwLmPHFG9tjYk_sZY';
+// ── Конфигурация Supabase ──────────────────────────────
+const SUPABASE_URL = 'ВАШ_SUPABASE_URL'; 
+const SUPABASE_ANON_KEY = 'ВАШ_SUPABASE_ANON_KEY';
 
-// ── ImageKit Настройки ──────────────────────────────────
-const IK_ENDPOINT   = 'https://ik.imagekit.io/4fsc9mrry';
-const IK_PUBLIC_KEY = 'public_SHUz6tu8gp5OvHHNoN/4J03ccWU=';
+// Инициализация глобального клиента Supabase
+const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-// Принудительно делаем db глобальной переменной, чтобы index.html её точно увидел
-window.db = supabase.createClient(SUPA_URL, SUPA_ANON);
-const db = window.db; // Сохраняем локальную ссылку для функций ниже
-
-// ── Текущий пользователь ────────────────────────────────
+// Получение текущего пользователя
 function getCurrentUser() {
-    const raw = localStorage.getItem('user');
-    return raw ? JSON.parse(raw) : null;
-}
-
-function getRole() {
-    return localStorage.getItem('role');
-}
-
-// ── Плавный переход ─────────────────────────────────────
-function goTo(page) {
-    document.body.style.transition = 'opacity 0.3s ease';
-    document.body.style.opacity = '0';
-    setTimeout(() => { window.location.href = page; }, 310);
-}
-
-// ── Время назад ─────────────────────────────────────────
-function timeAgo(dateStr) {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const m = Math.floor(diff / 60000);
-    if (m < 1)  return 'только что';
-    if (m < 60) return m + ' мин. назад';
-    const h = Math.floor(m / 60);
-    if (h < 24) return h + ' ч. назад';
-    return Math.floor(h / 24) + ' дн. назад';
-}
-
-// ── Сжатие изображения ──────────────────────────────────
-function compressImage(file, maxWidth = 1200) {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = e => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let w = img.width, h = img.height;
-                if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
-                canvas.width = w; canvas.height = h;
-                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                canvas.toBlob(blob => resolve(new File([blob], file.name, { type: 'image/jpeg' })), 'image/jpeg', 0.85);
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    });
-}
-
-// ── Прямая загрузка фото в ImageKit ─────────────────────
-async function uploadPhoto(file) {
-    const compressed = await compressImage(file);
-    const formData = new FormData();
-    formData.append('file', compressed);
-    formData.append('fileName', `photo_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`);
-    formData.append('publicKey', IK_PUBLIC_KEY);
-
-    const res = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
-        method: 'POST',
-        body: formData
-    });
-
-    if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || 'Ошибка загрузки фото в ImageKit');
+    try {
+        const userData = localStorage.getItem('user');
+        return userData ? JSON.parse(userData) : null;
+    } catch (e) {
+        return null;
     }
-
-    const data = await res.json();
-    return data.url; // Прямая ссылка на сжатое фото из ImageKit
 }
 
-// ── Аватар по умолчанию (SVG data URI) ─────────────────
-const DEFAULT_AVATAR = `data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%2300969d' stroke-width='2' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpolyline points='21 15 16 10 5 21'/%3E%3C/svg%3E`;
+// Навигация
+function goTo(url) {
+    window.location.href = url;
+}
 
-// ── Навигация: перехватить все ссылки ──────────────────
-function initNavLinks() {
-    document.querySelectorAll('a[href]').forEach(link => {
-        link.addEventListener('click', function(e) {
-            const href = this.getAttribute('href');
-            if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto')) return;
-            if (href === 'create.html' && getRole() === 'viewer') {
-                e.preventDefault();
-                if (typeof openKeyPopup === 'function') openKeyPopup();
-                return;
-            }
-            e.preventDefault();
-            goTo(href);
-        });
-    });
+// Относительное время (например, "5 мин. назад")
+function timeAgo(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+
+    if (seconds < 60) return 'только что';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} мин. назад`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} ч. назад`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days} дн. назад`;
+    return date.toLocaleDateString('ru-RU');
+}
+
+// Вспомогательные методы для старых вызовов (для совместимости)
+async function sbSelect(table, queryStr = '') {
+    if (!db) return [];
+    try {
+        const { data, error } = await db.from(table).select('*');
+        if (error) throw error;
+        return data || [];
+    } catch (e) {
+        console.error('sbSelect error:', e);
+        return [];
+    }
+}
+
+async function sbInsert(table, data) {
+    if (!db) return null;
+    const { data: res, error } = await db.from(table).insert(data).select();
+    if (error) throw error;
+    return res;
+}
+
+async function sbUpdate(table, filterStr, data) {
+    if (!db) return null;
+    const { data: res, error } = await db.from(table).update(data);
+    if (error) throw error;
+    return res;
+}
+
+async function sbDelete(table, filterStr) {
+    if (!db) return null;
+    const { data: res, error } = await db.from(table).delete();
+    if (error) throw error;
+    return res;
 }

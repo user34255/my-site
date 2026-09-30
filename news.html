@@ -296,10 +296,13 @@
         </div>
     </div>
 
+    <!-- 1. Библиотека Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- 2. Конфигурация и глобальные функции -->
     <script src="config.js"></script>
     <script>
         const role    = localStorage.getItem('role');
-        const user    = getCurrentUser();
+        const user    = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
         let sortBy    = 'date';   // 'date' | 'likes'
         let sortDir   = 'desc';   // 'desc' | 'asc'
         let allPosts  = [];
@@ -316,7 +319,9 @@
                 if (!href) return;
                 if (href === 'create.html' && role === 'viewer') { e.preventDefault(); openKeyPopup(); return; }
                 if (!href.startsWith('#') && !href.startsWith('http') && !href.startsWith('mailto')) {
-                    e.preventDefault(); goTo(href);
+                    e.preventDefault();
+                    if (typeof goTo === 'function') goTo(href);
+                    else window.location.href = href;
                 }
             });
         });
@@ -325,29 +330,50 @@
         async function loadPosts() {
             const container = document.getElementById('feedContainer');
             container.innerHTML = '<div class="loading">Загрузка...</div>';
+            
+            if (!window.db) {
+                container.innerHTML = '<div class="empty">Ошибка: База данных Supabase не подключена</div>';
+                return;
+            }
+
             try {
                 // Загружаем посты
-                const posts = await sbSelect('posts', 'select=id,author_id,author_nick,author_avatar,date,text,video_url,created_at');
+                const { data: posts, error: postsErr } = await db
+                    .from('posts')
+                    .select('id, author_id, author_nick, author_avatar, date, text, video_url, created_at')
+                    .order('created_at', { ascending: false });
 
-                // Загружаем лайки и фото одним запросом
-                const [likes, photos] = await Promise.all([
-                    sbSelect('likes', 'select=post_id,user_id,type'),
-                    sbSelect('photos', 'select=post_id,url')
+                if (postsErr) throw postsErr;
+
+                // Загружаем лайки и фотографии
+                const [{ data: likes }, { data: photos }] = await Promise.all([
+                    db.from('likes').select('post_id, user_id, type'),
+                    db.from('photos').select('post_id, url')
                 ]);
 
-                // Считаем лайки для каждого поста
-                allPosts = posts.map(p => {
-                    const postLikes    = likes.filter(l => l.post_id === p.id && l.type === 'like').length;
-                    const postDislikes = likes.filter(l => l.post_id === p.id && l.type === 'dislike').length;
-                    const myLike       = user ? likes.find(l => l.post_id === p.id && l.user_id === user.id) : null;
-                    const postPhotos   = photos.filter(ph => ph.post_id === p.id).map(ph => ph.url);
-                    return { ...p, likes: postLikes, dislikes: postDislikes, myLike: myLike?.type || null, photos: postPhotos };
+                const safeLikes = likes || [];
+                const safePhotos = photos || [];
+
+                // Связываем посты с лайками и медиа
+                allPosts = (posts || []).map(p => {
+                    const postLikes    = safeLikes.filter(l => l.post_id === p.id && l.type === 'like').length;
+                    const postDislikes = safeLikes.filter(l => l.post_id === p.id && l.type === 'dislike').length;
+                    const myLike       = user ? safeLikes.find(l => l.post_id === p.id && l.user_id === user.id) : null;
+                    const postPhotos   = safePhotos.filter(ph => ph.post_id === p.id).map(ph => ph.url);
+
+                    return {
+                        ...p,
+                        likes: postLikes,
+                        dislikes: postDislikes,
+                        myLike: myLike ? myLike.type : null,
+                        photos: postPhotos
+                    };
                 });
 
                 renderPosts();
             } catch(err) {
                 container.innerHTML = '<div class="empty">Ошибка загрузки постов</div>';
-                console.error(err);
+                console.error('Ошибка loadPosts:', err);
             }
         }
 
@@ -391,7 +417,7 @@
                     ? `<img src="${post.author_avatar}" alt="">`
                     : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
 
-                const photosHTML = post.photos.map(url =>
+                const photosHTML = (post.photos || []).map(url =>
                     `<div class="media-box"><img src="${url}" alt="фото" onclick="openPhoto('${url}')"></div>`
                 ).join('');
 
@@ -405,8 +431,10 @@
                 const likedClass    = post.myLike === 'like'    ? 'liked'    : '';
                 const dislikedClass = post.myLike === 'dislike' ? 'disliked' : '';
 
+                const navUserUrl = `user-profile.html?id=${post.author_id}`;
+
                 div.innerHTML = `
-                    <div class="post-user" onclick="goTo('user-profile.html?id=${post.author_id}')">
+                    <div class="post-user" onclick="${typeof goTo === 'function' ? `goTo('${navUserUrl}')` : `window.location.href='${navUserUrl}'`}">
                         <div class="post-avatar">${avatarHTML}</div>
                         <div class="post-username">${escHtml(post.author_nick)}</div>
                     </div>
@@ -428,7 +456,7 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                             <span>Комментарии</span>
                         </button>
-                        <span class="post-time">${timeAgo(post.created_at)}</span>
+                        <span class="post-time">${typeof timeAgo === 'function' ? timeAgo(post.created_at) : ''}</span>
                     </div>
                     ${idx < sorted.length - 1 ? '<div class="post-divider"></div>' : ''}
                 `;
@@ -446,24 +474,27 @@
             try {
                 if (post.myLike === type) {
                     // Убрать лайк
-                    await sbDelete('likes', `post_id=eq.${postId}&user_id=eq.${user.id}`);
+                    const { error } = await db.from('likes').delete().eq('post_id', postId).eq('user_id', user.id);
+                    if (error) throw error;
                     if (type === 'like') post.likes--; else post.dislikes--;
                     post.myLike = null;
                 } else {
                     if (post.myLike) {
-                        // Сменить тип
-                        await sbUpdate('likes', `post_id=eq.${postId}&user_id=eq.${user.id}`, { type });
+                        // Сменить лайк/дизлайк
+                        const { error } = await db.from('likes').update({ type }).eq('post_id', postId).eq('user_id', user.id);
+                        if (error) throw error;
                         if (post.myLike === 'like') { post.likes--; post.dislikes++; }
                         else { post.dislikes--; post.likes++; }
                     } else {
-                        // Новый лайк
-                        await sbInsert('likes', { post_id: postId, user_id: user.id, type });
+                        // Новый лайк/дизлайк
+                        const { error } = await db.from('likes').insert({ post_id: postId, user_id: user.id, type });
+                        if (error) throw error;
                         if (type === 'like') post.likes++; else post.dislikes++;
                     }
                     post.myLike = type;
                 }
                 renderPosts();
-            } catch(e) { console.error(e); }
+            } catch(e) { console.error('Ошибка лайка:', e); }
         }
 
         // ── Комментарии ───────────────────────────────
@@ -472,21 +503,29 @@
             document.getElementById('commentsModal').classList.add('show');
             document.getElementById('commentsList').innerHTML = '<div class="no-comments">Загрузка...</div>';
 
-            // Зрителям — скрыть поле ввода
             const inputArea = document.getElementById('commentInputArea');
             if (role === 'viewer') {
                 inputArea.innerHTML = '<div class="viewer-comment-note">Войдите с ключом чтобы комментировать</div>';
             }
 
             try {
-                const comments = await sbSelect('comments', `post_id=eq.${postId}&order=created_at.asc&select=id,author_nick,author_avatar,text,created_at`);
-                renderComments(comments);
-            } catch(e) { console.error(e); }
+                const { data: comments, error } = await db
+                    .from('comments')
+                    .select('id, author_nick, author_avatar, text, created_at')
+                    .eq('post_id', postId)
+                    .order('created_at', { ascending: true });
+
+                if (error) throw error;
+                renderComments(comments || []);
+            } catch(e) {
+                console.error('Ошибка загрузки комментариев:', e);
+                document.getElementById('commentsList').innerHTML = '<div class="no-comments">Ошибка загрузки</div>';
+            }
         }
 
         function renderComments(comments) {
             const list = document.getElementById('commentsList');
-            if (comments.length === 0) { list.innerHTML = '<div class="no-comments">Пока нет комментариев</div>'; return; }
+            if (!comments || comments.length === 0) { list.innerHTML = '<div class="no-comments">Пока нет комментариев</div>'; return; }
             list.innerHTML = '';
             comments.forEach(c => {
                 const div = document.createElement('div');
@@ -499,7 +538,7 @@
                     <div class="comment-body">
                         <div class="comment-nick">${escHtml(c.author_nick)}</div>
                         <div class="comment-text">${escHtml(c.text)}</div>
-                        <div class="comment-time">${timeAgo(c.created_at)}</div>
+                        <div class="comment-time">${typeof timeAgo === 'function' ? timeAgo(c.created_at) : ''}</div>
                     </div>`;
                 list.appendChild(div);
             });
@@ -508,41 +547,50 @@
         function closeComments() {
             document.getElementById('commentsModal').classList.remove('show');
             currentPostId = null;
-            // Восстановить поле ввода
-            document.getElementById('commentInputArea').innerHTML = `
-                <div class="comment-input-row">
-                    <input class="comment-input" id="commentInput" placeholder="Написать комментарий..." maxlength="300">
-                    <button class="comment-send" onclick="sendComment()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                    </button>
-                </div>`;
+            if (role !== 'viewer') {
+                document.getElementById('commentInputArea').innerHTML = `
+                    <div class="comment-input-row">
+                        <input class="comment-input" id="commentInput" placeholder="Написать комментарий..." maxlength="300">
+                        <button class="comment-send" onclick="sendComment()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        </button>
+                    </div>`;
+            }
         }
 
         async function sendComment() {
             if (!user || !currentPostId) return;
             const input = document.getElementById('commentInput');
+            if (!input) return;
             const text = input.value.trim();
             if (!text) return;
             input.value = '';
+
             try {
-                await sbInsert('comments', {
+                const { error } = await db.from('comments').insert({
                     post_id: currentPostId,
                     author_id: user.id,
                     author_nick: user.nickname,
                     author_avatar: user.avatar_url || null,
                     text
                 });
-                const comments = await sbSelect('comments', `post_id=eq.${currentPostId}&order=created_at.asc&select=id,author_nick,author_avatar,text,created_at`);
-                renderComments(comments);
-            } catch(e) { console.error(e); }
+                if (error) throw error;
+
+                const { data: comments, error: cErr } = await db
+                    .from('comments')
+                    .select('id, author_nick, author_avatar, text, created_at')
+                    .eq('post_id', currentPostId)
+                    .order('created_at', { ascending: true });
+
+                if (cErr) throw cErr;
+                renderComments(comments || []);
+            } catch(e) { console.error('Ошибка отправки комментария:', e); }
         }
 
-        // Enter для отправки комментария
         document.getElementById('commentsModal').addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && document.getElementById('commentInput')) sendComment();
         });
 
-        // Закрытие модала кликом на оверлей
         document.getElementById('commentsModal').addEventListener('click', function(e) {
             if (e.target === this) closeComments();
         });
