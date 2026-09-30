@@ -1,7 +1,10 @@
 // ── Supabase SDK ────────────────────────────────────────
 const SUPA_URL  = 'https://itojilitujiabyigwnda.supabase.co';
 const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0b2ppbGl0dWppYWJ5aWd3bmRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTYwMjYsImV4cCI6MjA5OTg5MjAyNn0.kRSV1fvB88HGBxEdmCfi9af6t1uwLmPHFG9tjYk_sZY';
-const IK_ENDPOINT = 'https://ik.imagekit.io/4fsc9mrry';
+
+// ── ImageKit Настройки ──────────────────────────────────
+const IK_ENDPOINT   = 'https://ik.imagekit.io/4fsc9mrry';
+const IK_PUBLIC_KEY = 'public_SHUz6tu8gp5OvHHNoN/4J03ccWU=';
 
 // Принудительно делаем db глобальной переменной, чтобы index.html её точно увидел
 window.db = supabase.createClient(SUPA_URL, SUPA_ANON);
@@ -55,15 +58,26 @@ function compressImage(file, maxWidth = 1200) {
     });
 }
 
-// ── Загрузка фото в Supabase Storage ───────────────────
+// ── Прямая загрузка фото в ImageKit ─────────────────────
 async function uploadPhoto(file) {
     const compressed = await compressImage(file);
-    const ext  = 'jpg';
-    const name = `photo_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-    const { data, error } = await db.storage.from('photos').upload(name, compressed, { contentType: 'image/jpeg', upsert: false });
-    if (error) throw error;
-    const { data: urlData } = db.storage.from('photos').getPublicUrl(name);
-    return urlData.publicUrl;
+    const formData = new FormData();
+    formData.append('file', compressed);
+    formData.append('fileName', `photo_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`);
+    formData.append('publicKey', IK_PUBLIC_KEY);
+
+    const res = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
+        method: 'POST',
+        body: formData
+    });
+
+    if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Ошибка загрузки фото в ImageKit');
+    }
+
+    const data = await res.json();
+    return data.url; // Прямая ссылка на сжатое фото из ImageKit
 }
 
 // ── Аватар по умолчанию (SVG data URI) ─────────────────
