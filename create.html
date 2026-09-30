@@ -231,7 +231,10 @@
         </div>
     </div>
 
+    <!-- ВАЖНО: Сначала библиотека Supabase, потом твой конфиг -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
+
     <script>
         const user = getCurrentUser();
         let photoFile = null;
@@ -260,8 +263,8 @@
         // ── Загрузить пост для редактирования ────────
         async function loadPostForEdit(id) {
             try {
-                const posts = await sbSelect('posts', `id=eq.${id}&select=*`);
-                if (!posts.length) return;
+                const { data: posts, error } = await db.from('posts').select('*').eq('id', id);
+                if (error || !posts.length) return;
                 const p = posts[0];
 
                 // Проверка: только автор может редактировать
@@ -288,8 +291,8 @@
                 }
 
                 // Загрузить фото
-                const photos = await sbSelect('photos', `post_id=eq.${id}&select=url`);
-                if (photos.length) {
+                const { data: photos } = await db.from('photos').select('url').eq('post_id', id);
+                if (photos && photos.length) {
                     const url = photos[0].url;
                     document.getElementById('photoPreview').src = url;
                     document.getElementById('photoPreview').classList.add('visible');
@@ -323,7 +326,7 @@
             this.style.height = Math.min(this.scrollHeight, 120) + 'px';
         });
 
-        // ── Фото ──────────────────────────────────────
+        // ── Фото (предпросмотр) ───────────────────────
         document.getElementById('photoInput').addEventListener('change', function() {
             const file = this.files[0];
             if (!file) return;
@@ -366,7 +369,6 @@
             document.getElementById('ytLink').href = 'https://www.youtube.com/watch?v=' + id;
             document.getElementById('videoText').style.color = '#00969d';
 
-            // Определяем ошибку встраивания
             window.addEventListener('message', function handler(e) {
                 if (!e.origin.includes('youtube.com')) return;
                 try {
@@ -380,29 +382,11 @@
             });
         }
 
-        // ── Загрузка фото в Supabase Storage ─────────
-        async function uploadPhotoToStorage(file) {
-            const compressed = await compressImage(file, 1200);
-            const fileName   = `posts/${user.id}_${Date.now()}.jpg`;
-            const url        = `${CONFIG.supabase.url}/storage/v1/object/photos/${fileName}`;
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + CONFIG.supabase.anon,
-                    'apikey': CONFIG.supabase.anon,
-                    'Content-Type': 'image/jpeg',
-                    'x-upsert': 'true'
-                },
-                body: compressed
-            });
-            if (!res.ok) throw new Error(await res.text());
-            return `${CONFIG.supabase.url}/storage/v1/object/public/photos/${fileName}`;
-        }
-
         // ── Публикация ────────────────────────────────
         async function publishPost() {
             const date = document.getElementById('dateInput').value.trim();
             const text = document.getElementById('textInput').value.trim();
+            
             if (!date && !text && !photoFile && !videoUrl) {
                 document.getElementById('publishStatus').textContent = 'Заполните хотя бы одно поле';
                 return;
@@ -416,32 +400,43 @@
             try {
                 let photoUrl = null;
 
-                // Загрузить фото если есть
+                // Загрузить фото в ImageKit
                 if (photoFile) {
                     status.textContent = 'Загрузка фото...';
-                    photoUrl = await uploadPhotoToStorage(photoFile);
+                    photoUrl = await uploadPhoto(photoFile);
                 }
 
                 if (editPostId) {
                     // ── Редактирование ─────────────────
-                    await sbUpdate('posts', `id=eq.${editPostId}`, { date, text, video_url: videoUrl || null });
+                    const { error: updErr } = await db.from('posts').update({
+                        date: date || null, 
+                        text: text || null, 
+                        video_url: videoUrl || null 
+                    }).eq('id', editPostId);
+                    
+                    if (updErr) throw updErr;
+
                     if (photoFile && photoUrl) {
                         // Удалить старые фото и добавить новое
-                        await sbDelete('photos', `post_id=eq.${editPostId}`);
-                        await sbInsert('photos', { post_id: editPostId, url: photoUrl });
+                        await db.from('photos').delete().eq('post_id', editPostId);
+                        await db.from('photos').insert([{ post_id: editPostId, url: photoUrl }]);
                     }
                     status.textContent = '✓ Сохранено!';
                 } else {
                     // ── Новый пост ─────────────────────
-                    const post = await sbInsert('posts', {
+                    const { data: post, error: insErr } = await db.from('posts').insert([{
                         author_id:     user.id,
                         author_nick:   user.nickname,
                         author_avatar: user.avatar_url || null,
-                        date, text,
-                        video_url: videoUrl || null
-                    });
-                    if (photoUrl && post[0]) {
-                        await sbInsert('photos', { post_id: post[0].id, url: photoUrl });
+                        date:          date || null,
+                        text:          text || null,
+                        video_url:     videoUrl || null
+                    }]).select();
+
+                    if (insErr) throw insErr;
+
+                    if (photoUrl && post && post.length > 0) {
+                        await db.from('photos').insert([{ post_id: post[0].id, url: photoUrl }]);
                     }
                     status.textContent = '✓ Опубликовано!';
                 }
