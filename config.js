@@ -3,8 +3,13 @@ const SUPA_URL  = 'https://itojilitujiabyigwnda.supabase.co';
 const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0b2ppbGl0dWppYWJ5aWd3bmRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTYwMjYsImV4cCI6MjA5OTg5MjAyNn0.kRSV1fvB88HGBxEdmCfi9af6t1uwLmPHFG9tjYk_sZY';
 const IK_ENDPOINT = 'https://ik.imagekit.io/4fsc9mrry';
 
-// Принудительно делаем db глобальной переменной, чтобы index.html её точно увидел
-window.db = supabase.createClient(SUPA_URL, SUPA_ANON);
+// Безопасная инициализация: проверяем, что библиотека Supabase загрузилась
+window.db = null;
+if (window.supabase) {
+    window.db = window.supabase.createClient(SUPA_URL, SUPA_ANON);
+} else {
+    console.error("Supabase SDK не загружен! Проверьте порядок подключения скриптов в HTML.");
+}
 const db = window.db; // Сохраняем локальную ссылку для функций ниже
 
 // ── Текущий пользователь ────────────────────────────────
@@ -57,6 +62,7 @@ function compressImage(file, maxWidth = 1200) {
 
 // ── Загрузка фото в Supabase Storage ───────────────────
 async function uploadPhoto(file) {
+    if (!db) throw new Error("База данных не подключена");
     const compressed = await compressImage(file);
     const ext  = 'jpg';
     const name = `photo_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;

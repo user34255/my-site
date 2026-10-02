@@ -350,7 +350,7 @@
     <div class="top-nav-zone"></div>
 
     <div class="navbar-container">
-        <!-- ... Навигация (без изменений) ... -->
+        <!-- Навигация -->
         <div class="navbar-inner">
             <div class="nav-item active">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -422,7 +422,12 @@
             input.style.opacity = '0.6';
 
             try {
-                const { data, error } = await db
+                // ДОБАВЛЕНА ПРОВЕРКА: Если config.js не смог инициализировать базу
+                if (!window.db) {
+                    throw new Error("Не удалось подключиться к базе данных. Проверьте config.js.");
+                }
+
+                const { data, error } = await window.db
                     .from('users')
                     .select('id, nickname, avatar_url')
                     .eq('access_key', val)
