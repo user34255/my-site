@@ -113,7 +113,9 @@
         }
         .save-nick-btn:hover { background:#00b0b8; }
         .save-nick-btn.visible { display:block; }
-        .profile-status { font-size:15px; color:rgba(255,255,255,0.4); letter-spacing:1px; text-transform:uppercase; }
+        
+        /* Исправлена видимость статуса профиля */
+        .profile-status { font-size:15px; letter-spacing:1px; text-transform:uppercase; font-weight:bold; min-height: 18px; }
 
         /* ── Меню действий ───────────────────────────── */
         .action-menu { display:flex; flex-direction:column; gap:18px; }
@@ -141,8 +143,10 @@
             font-family:'basis33',monospace; font-size:16px; color:#fff; letter-spacing:1px;
             transition:border-color 0.25s;
         }
-        .friend-search-input::placeholder { color:rgba(255,255,255,0.35); }
+        /* Улучшена видимость надписи "Ник пользователя" */
+        .friend-search-input::placeholder { color:rgba(255,255,255,0.75); }
         .friend-search-input:focus { border-color:#00969d; }
+        
         .add-friend-btn {
             background:#00969d; border:none; border-radius:30px; padding:8px 18px;
             font-family:'basis33',monospace; font-size:16px; color:#fff; cursor:pointer;
@@ -150,6 +154,9 @@
             transition:background 0.22s,transform 0.22s cubic-bezier(0.34,1.5,0.64,1);
         }
         .add-friend-btn:hover { background:#00b0b8; transform:scale(1.05); }
+
+        /* Отдельный видимый статус для раздела друзей */
+        .friend-status-msg { font-size:14px; letter-spacing:1px; font-family:'basis33',monospace; text-transform:uppercase; margin-top:-10px; min-height:16px; font-weight:bold; }
 
         .friends-list { display:flex; flex-direction:column; gap:12px; overflow-y:auto; max-height:240px; }
         .friends-list::-webkit-scrollbar { width:4px; }
@@ -210,7 +217,8 @@
             <div class="action-menu">
                 <a href="my-stories.html" class="action-item">
                     <div class="action-circle">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                        <!-- Иконка заменена на "Книгу" для идеальной симметрии и центровки -->
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
                     </div>
                     <div class="action-text">Мои истории</div>
                 </a>
@@ -231,6 +239,9 @@
                 <input class="friend-search-input" id="friendNickInput" placeholder="Ник пользователя" maxlength="30" spellcheck="false">
                 <button class="add-friend-btn" onclick="addFriend()">+ Добавить</button>
             </div>
+            <!-- Добавлено отдельное поле под статус поиска друзей -->
+            <div id="friendSearchStatus" class="friend-status-msg"></div>
+            
             <div class="friends-list" id="friendsList">
                 <div class="no-friends">Загрузка...</div>
             </div>
@@ -241,6 +252,23 @@
     <script>
         const user = getCurrentUser();
         let originalNick = '';
+
+        // Вспомогательные функции для ярких уведомлений
+        function showProfileStatus(msg, isError = false) {
+            const el = document.getElementById('profileStatus');
+            el.textContent = msg;
+            el.style.color = isError ? '#ff6b6b' : '#4ade80';
+            el.style.textShadow = isError ? '0 0 10px rgba(255,107,107,0.6)' : '0 0 10px rgba(74,222,128,0.6)';
+            setTimeout(() => el.textContent = '', 3000);
+        }
+
+        function showFriendStatus(msg, isError = false) {
+            const el = document.getElementById('friendSearchStatus');
+            el.textContent = msg;
+            el.style.color = isError ? '#ff6b6b' : '#4ade80';
+            el.style.textShadow = isError ? '0 0 10px rgba(255,107,107,0.6)' : '0 0 10px rgba(74,222,128,0.6)';
+            setTimeout(() => el.textContent = '', 3000);
+        }
 
         window.addEventListener('load', async () => {
             requestAnimationFrame(() => document.body.classList.add('loaded'));
@@ -254,24 +282,19 @@
                 document.getElementById('addFriendRow').style.display = 'none';
             }
 
-            // Показать данные пользователя
             await loadProfile();
             await loadFriends();
         });
 
         async function loadProfile() {
             try {
-                // Обновить данные из БД
                 const users = await sbSelect('users', `id=eq.${user.id}&select=id,nickname,avatar_url`);
                 if (users.length) {
                     const fresh = users[0];
-                    // Обновить localStorage
                     localStorage.setItem('user', JSON.stringify({...user, ...fresh}));
-                    // Показать аватар
                     if (fresh.avatar_url) {
                         document.getElementById('avatarCircle').innerHTML = `<img src="${fresh.avatar_url}" alt="">`;
                     }
-                    // Показать ник
                     document.getElementById('nickInput').value = fresh.nickname;
                     originalNick = fresh.nickname;
                 }
@@ -287,48 +310,48 @@
         async function saveNickname() {
             const newNick = nickInput.value.trim();
             if (!newNick || newNick === originalNick) return;
-            const status = document.getElementById('profileStatus');
             try {
                 await sbUpdate('users', `id=eq.${user.id}`, { nickname: newNick });
                 const updated = {...user, nickname: newNick};
                 localStorage.setItem('user', JSON.stringify(updated));
                 originalNick = newNick;
                 document.getElementById('saveNickBtn').classList.remove('visible');
-                status.textContent = '✓ Ник сохранён';
-                setTimeout(() => status.textContent = '', 2000);
-            } catch(e) { status.textContent = 'Ошибка сохранения'; }
+                showProfileStatus('✓ Ник сохранён', false);
+            } catch(e) { 
+                showProfileStatus('Ошибка сохранения', true); 
+            }
         }
 
         // ── Смена аватара ─────────────────────────────
         document.getElementById('avatarInput').addEventListener('change', async function() {
             const file = this.files[0];
             if (!file) return;
-            const status = document.getElementById('profileStatus');
-            status.textContent = 'Загрузка аватара...';
+            showProfileStatus('Загрузка аватара...', false);
             try {
-                const compressed = await compressImage(file, 400);
+                // Функция compressImage убрана, т.к. из-за ее отсутствия вылетал скрипт
                 const fileName   = `avatars/${user.id}_${Date.now()}.jpg`;
                 const uploadUrl  = `${CONFIG.supabase.url}/storage/v1/object/photos/${fileName}`;
                 const res = await fetch(uploadUrl, {
                     method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + CONFIG.supabase.anon, 'apikey': CONFIG.supabase.anon, 'Content-Type': 'image/jpeg', 'x-upsert': 'true' },
-                    body: compressed
+                    headers: { 'Authorization': 'Bearer ' + CONFIG.supabase.anon, 'apikey': CONFIG.supabase.anon, 'Content-Type': file.type || 'image/jpeg', 'x-upsert': 'true' },
+                    body: file // Загружаем оригинальный файл напрямую
                 });
                 if (!res.ok) throw new Error(await res.text());
                 const avatarUrl = `${CONFIG.supabase.url}/storage/v1/object/public/photos/${fileName}`;
                 await sbUpdate('users', `id=eq.${user.id}`, { avatar_url: avatarUrl });
                 localStorage.setItem('user', JSON.stringify({...user, avatar_url: avatarUrl}));
                 document.getElementById('avatarCircle').innerHTML = `<img src="${avatarUrl}" alt="">`;
-                status.textContent = '✓ Аватар обновлён';
-                setTimeout(() => status.textContent = '', 2000);
-            } catch(e) { status.textContent = 'Ошибка загрузки'; console.error(e); }
+                showProfileStatus('✓ Аватар обновлён', false);
+            } catch(e) { 
+                showProfileStatus('Ошибка загрузки', true); 
+                console.error(e); 
+            }
         });
 
         // ── Друзья ────────────────────────────────────
         async function loadFriends() {
             const list = document.getElementById('friendsList');
             try {
-                // Принятые друзья и входящие заявки
                 const friendships = await sbSelect('friends',
                     `or=(user_id.eq.${user.id},friend_id.eq.${user.id})&select=id,user_id,friend_id,status`
                 );
@@ -338,7 +361,6 @@
                     return;
                 }
 
-                // Получаем ID всех связанных пользователей
                 const ids = [...new Set(friendships.flatMap(f => [f.user_id, f.friend_id]).filter(id => id !== user.id))];
                 const friendUsers = ids.length
                     ? await sbSelect('users', `id=in.(${ids.join(',')})&select=id,nickname,avatar_url`)
@@ -377,17 +399,18 @@
         async function addFriend() {
             const nick = document.getElementById('friendNickInput').value.trim();
             if (!nick) return;
-            const status = document.getElementById('profileStatus');
             try {
                 const found = await sbSelect('users', `nickname=eq.${encodeURIComponent(nick)}&select=id,nickname`);
-                if (!found.length) { status.textContent = 'Пользователь не найден'; setTimeout(()=>status.textContent='',2000); return; }
-                if (found[0].id === user.id) { status.textContent = 'Нельзя добавить себя'; setTimeout(()=>status.textContent='',2000); return; }
+                if (!found.length) { showFriendStatus('Пользователь не найден', true); return; }
+                if (found[0].id === user.id) { showFriendStatus('Нельзя добавить себя', true); return; }
+                
                 await sbInsert('friends', { user_id: user.id, friend_id: found[0].id, status: 'pending' });
                 document.getElementById('friendNickInput').value = '';
-                status.textContent = '✓ Заявка отправлена';
-                setTimeout(()=>status.textContent='',2000);
+                showFriendStatus('✓ Заявка отправлена', false);
                 loadFriends();
-            } catch(e) { status.textContent = 'Уже в друзьях или ошибка'; setTimeout(()=>status.textContent='',2000); }
+            } catch(e) { 
+                showFriendStatus('Уже в друзьях или ошибка', true); 
+            }
         }
 
         async function acceptFriend(e, friendshipId) {
@@ -408,15 +431,8 @@
             localStorage.removeItem('user');
             goTo('index.html');
         }
-
-        document.querySelectorAll('a[href]').forEach(link => {
-            link.addEventListener('click', function(e) {
-                const href = this.getAttribute('href');
-                if (href && !href.startsWith('#') && !href.startsWith('http') && !href.startsWith('mailto')) {
-                    e.preventDefault(); goTo(href);
-                }
-            });
-        });
+        
+        // Перехватчик a[href] был удален, чтобы не ломать стандартный переход по ссылкам "Мои истории"
     </script>
 </body>
 </html>
