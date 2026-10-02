@@ -29,9 +29,19 @@ function goTo(page) {
     setTimeout(() => { window.location.href = page; }, 310);
 }
 
-// ── Время назад ─────────────────────────────────────────
+// ── Время назад (с поправкой на часовой пояс) ───────────
 function timeAgo(dateStr) {
-    const diff = Date.now() - new Date(dateStr).getTime();
+    // Принудительно указываем браузеру, что дата из базы - это UTC
+    let safeDateStr = dateStr;
+    if (!safeDateStr.endsWith('Z') && !safeDateStr.includes('+')) {
+        safeDateStr += 'Z';
+    }
+
+    const diff = Date.now() - new Date(safeDateStr).getTime();
+    
+    // Защита от рассинхрона
+    if (diff < 0) return 'только что';
+
     const m = Math.floor(diff / 60000);
     if (m < 1)  return 'только что';
     if (m < 60) return m + ' мин. назад';

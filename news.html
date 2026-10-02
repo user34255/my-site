@@ -160,7 +160,15 @@
         .action-btn:hover { background:rgba(255,255,255,0.16); color:#fff; }
         .action-btn.liked { background:rgba(0,200,100,0.22); border-color:rgba(0,200,100,0.5); color:#00e676; }
         .action-btn.disliked { background:rgba(220,60,60,0.22); border-color:rgba(220,60,60,0.5); color:#ff5252; }
-        .post-time { margin-left:auto; font-family:'basis33',monospace; font-size:15px; color:rgba(255,255,255,0.35); }
+        
+        /* Измененный стиль для времени поста */
+        .post-time { 
+            margin-left:auto; 
+            font-family:'basis33',monospace; 
+            font-size:20px; 
+            color:rgba(255,255,255,0.9);
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
 
         /* ── Разделитель постов ───────────────────────── */
         .post-divider { width:100%; height:1px; background:rgba(255,255,255,0.08); margin-top:8px; }
@@ -222,7 +230,15 @@
         .comment-body { flex:1; }
         .comment-nick { font-family:'basis33',monospace; font-size:18px; color:#00a4ad; margin-bottom:4px; }
         .comment-text { font-family:'basis33',monospace; font-size:16px; color:rgba(255,255,255,0.85); line-height:1.4; word-wrap:break-word; }
-        .comment-time { font-size:13px; color:rgba(255,255,255,0.3); margin-top:3px; }
+        
+        /* Измененный стиль для времени в комментариях */
+        .comment-time { 
+            font-family:'basis33',monospace;
+            font-size:16px; 
+            color:rgba(255,255,255,0.7); 
+            margin-top:4px; 
+        }
+        
         .no-comments { text-align:center; padding:40px 0; font-family:'basis33',monospace; font-size:18px; color:rgba(255,255,255,0.3); text-transform:uppercase; }
 
         .modal-input-area { padding:16px 36px 28px; flex-shrink:0; border-top:1px solid rgba(255,255,255,0.08); }
